@@ -28,6 +28,18 @@ describe('arXiv metadata and bounded retrieval', () => {
   it('keeps distinct article identities even when their abstract/title/date coincide', () => {
     expect(parseArxiv(feed({ id: 'http://arxiv.org/abs/2106.08266v2' }), retrievedAt)[0].hash).not.toBe(source.hash);
   });
+  it('accepts scalar Atom text attributes without coercing numeric-looking text', () => {
+    const xml = feed({ title: '2026' }).replace('<summary>', '<summary type="text">');
+    expect(parseArxiv(xml, retrievedAt)[0]).toMatchObject({ title: '2026', excerpt: 'A bounded abstract about visual inspection of manufactured parts.' });
+  });
+  it.each([
+    feed({ title: '<nested>Industrial inspection</nested>' }),
+    feed({ summary: '<nested>Industrial inspection research</nested>' }),
+    feed().replace('</title>', '</title><title>A duplicate title</title>'),
+    feed().replace('</summary>', '</summary><summary>A duplicate abstract</summary>'),
+  ])('rejects nested or repeated text fields instead of manufacturing a string (%#)', xml => {
+    expect(() => parseArxiv(xml, retrievedAt)).toThrow('one text value');
+  });
   it.each([
     '<feed><entry></feed>',
     '<html><body>Not an Atom feed</body></html>',
@@ -64,6 +76,15 @@ describe('arXiv metadata and bounded retrieval', () => {
     await expect(boundedText(new Response('x', { headers: { 'content-length': '100' } }), 3)).rejects.toThrow('size limit');
     await expect(boundedText(new Response('down', { status: 503 }))).rejects.toThrow('HTTP 503');
   });
+  it.each([
+    { status: 503, headers: new Headers(), error: 'HTTP 503' },
+    { status: 200, headers: new Headers({ 'content-length': '1000' }), error: 'size limit' },
+  ])('cancels unread response bodies when rejecting an upstream response %#', async ({ status, headers, error }) => {
+    const cancel = vi.fn();
+    const response = new Response(new ReadableStream({ cancel }), { status, headers });
+    await expect(boundedText(response, 100)).rejects.toThrow(error);
+    expect(cancel).toHaveBeenCalledOnce();
+  });
 });
 
 describe('official daily RSS fallback', () => {
@@ -85,7 +106,14 @@ describe('official daily RSS fallback', () => {
     { link: 'https://attacker.invalid/abs/2106.08265' },
     { description: 'arXiv:2106.99999v2 Announce Type: replace Abstract: Industrial inspection research.' },
     { 'arxiv:announce_type': 'unknown' },
+    { link: 'https://arxiv.org/abs/2106.08265v1' },
+    { 'arxiv:announce_type': 'new' },
+    { description: 'arXiv:2106.08265v2 Announce Type: replace Abstract: ' },
+    { title: '<nested>Industrial inspection</nested>' },
   ])('rejects invalid RSS provenance %#', invalid => expect(() => parseArxivRss(rssFeed(rssItem(invalid)), retrievedAt)).toThrow());
+  it('accepts an explicit link version only when it agrees with description metadata', () => {
+    expect(parseArxivRss(rssFeed(rssItem({ link: 'https://arxiv.org/abs/2106.08265v2' })), retrievedAt)[0].url).toBe('https://arxiv.org/abs/2106.08265v2');
+  });
   it('uses the documented RSS endpoint after an Atom failure', async () => {
     const fake = vi.fn<typeof fetch>().mockRejectedValueOnce(new Error('network timeout')).mockResolvedValueOnce(new Response(rssFeed()));
     const results = await fetchArxiv(fake);

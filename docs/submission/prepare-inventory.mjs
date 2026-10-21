@@ -1,0 +1,51 @@
+import { readFile, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { createHash } from 'node:crypto';
+
+const here = import.meta.dirname;
+const app = resolve(here, '../..');
+const rawLock = await readFile(resolve(app, 'package-lock.json'), 'utf8');
+const lock = JSON.parse(rawLock);
+const pkg = JSON.parse(await readFile(resolve(app, 'package.json'), 'utf8'));
+const purposes = {
+  '@electric-sql/pglite': 'Local embedded PostgreSQL storage', '@fastify/cookie': 'Session-cookie handling',
+  '@fastify/rate-limit': 'API request rate limits', '@fastify/static': 'Serve the built client', dotenv: 'Environment configuration',
+  'fast-xml-parser': 'Validate and parse arXiv Atom/RSS', fastify: 'HTTP API framework', 'lucide-react': 'Interface icons',
+  pg: 'Managed PostgreSQL driver', react: 'Interface components', 'react-dom': 'Browser interface rendering', zod: 'Input schemas and validation',
+  '@types/node': 'Node type definitions', '@types/pg': 'PostgreSQL driver type definitions', '@types/react': 'React type definitions',
+  '@types/react-dom': 'React DOM type definitions', '@vitejs/plugin-react': 'React build integration', concurrently: 'Local client/server development runner',
+  tsx: 'Execute TypeScript in development/server scripts', typescript: 'Type checking and TypeScript language tooling',
+  vite: 'Development server and production client build', vitest: 'Automated test runner',
+};
+const entries = Object.entries(lock.packages).filter(([path]) => path).map(([path, meta]) => ({
+  path, name: path.split('node_modules/').at(-1), version: meta.version ?? 'NOT_RECORDED',
+  license: typeof meta.license === 'string' ? meta.license : 'NOT_RECORDED', development: !!meta.dev, optional: !!meta.optional,
+})).sort((a, b) => a.path.localeCompare(b.path));
+const csv = value => '"' + String(value).replaceAll('"', '""') + '"';
+await writeFile(resolve(here, 'dependency-licenses.csv'), [
+  'package_path,name,resolved_version,declared_license,development,optional',
+  ...entries.map(row => Object.values(row).map(csv).join(',')),
+].join('\n') + '\n');
+const lines = [
+  '# Dependency declaration appendix', '',
+  'Generated from the local package-lock.json on 21 October 2026. These are resolved versions and package-declared licence identifiers, not version ranges or a legal opinion. Keep upstream notices; verify the distributed artefacts and any missing metadata before release.', '',
+  `Lockfile SHA-256: \`${createHash('sha256').update(rawLock).digest('hex')}\`.`,
+  `Lockfile inventory: ${entries.length} package entries, including transitive and optional platform entries. Missing licence metadata: ${entries.filter(row => row.license === 'NOT_RECORDED').length}.`,
+  'Full inventory: [dependency-licenses.csv](dependency-licenses.csv). Not every optional platform entry is installed or executed on this Windows host.', '',
+];
+for (const [group, dependencies] of [['Runtime', pkg.dependencies], ['Development and verification', pkg.devDependencies]]) {
+  lines.push(`## ${group}`, '', '| Name and resolved version | Purpose | Package-declared licence |', '| --- | --- | --- |');
+  for (const name of Object.keys(dependencies)) {
+    const row = entries.find(item => item.path === 'node_modules/' + name);
+    lines.push(`| ${name} ${row?.version ?? 'NOT_RECORDED'} | ${purposes[name] ?? 'Confirm purpose'} | ${row?.license ?? 'NOT_RECORDED'} |`);
+  }
+  lines.push('');
+}
+lines.push('## Other tools and material', '',
+  `Inventory generator runtime: Node.js ${process.version}. Earlier hosted verification used Node.js 22.22.0. Record the final host runtime, npm and database versions when deployment is resumed.`, '',
+  'Node.js, npm and PostgreSQL have their own distribution notices and bundled dependencies. The package inventory is not a complete operating-system or cloud-service software bill of materials.', '',
+  'OpenAI Codex and Gemini are development services under their provider/account terms, not Apache-licensed runtime dependencies. Exact assistant model identities require participant confirmation. The planned BAAI model has not executed; verify its exact model card/licence and deployed revision before activation.', '',
+  'TalentCorp, Intel, O*NET, arXiv, Microsoft Learn, ASQ and NIST references retain their source-specific rights. Do not treat public access as a blanket right to redistribute reports, papers or courses. Application code licensing does not relicense that content.', '',
+  'Regenerate with `node docs/submission/prepare-inventory.mjs` after dependency changes. This command only writes the two inventory files in this submission directory.', '');
+await writeFile(resolve(here, 'DEPENDENCIES.md'), lines.join('\n'));
+console.log(`Inventoried ${entries.length} lockfile package entries.`);

@@ -127,6 +127,7 @@ export async function buildApp(options: AppOptions) {
     if (requested.expectedProfileVersion !== undefined && requested.expectedProfileVersion !== input.profile.version) fail(409, 'This profile changed after the plan was reviewed. Reload and inspect the updated plan before adopting it.');
     const existing = state.plans.find(p => p.profileId === input.profileId && p.profileVersion === input.profile.version && p.snapshotId === input.snapshot.id && p.scenario === input.scenario && p.roleId === input.roleId);
     if (existing) return existing;
+    if (state.plans.length >= 50) fail(422, 'This workspace has reached the 50 saved-plan limit. Existing plans and progress have been preserved.');
     const plan = { ...createPlan(input.profile, input.snapshot, input.scenario, input.roleId, state.roles, state.resources), id: randomUUID(), createdAt: new Date().toISOString(), completed: [] as string[] };
     if (plan.steps.length === 0) fail(422, 'No feasible learning steps are available. Review your constraints first.');
     const previous = state.plans.find(p => p.profileId === input.profileId && p.roleId === input.roleId && p.scenario === input.scenario)
@@ -141,7 +142,7 @@ export async function buildApp(options: AppOptions) {
         changed = valid.length !== plan.completed.length; plan.completed = valid;
       }
     }
-    state.plans.unshift(plan); state.plans = state.plans.slice(0, 50); audit(state, 'plan.adopted', plan.roleId + ' · ' + plan.snapshotId); return plan;
+    state.plans.unshift(plan); audit(state, 'plan.adopted', plan.roleId + ' · ' + plan.snapshotId); return plan;
   }));
   app.patch<{ Params: { id: string } }>('/api/plans/:id/progress', async req => {
     const input = z.object({ resourceId: idSchema, completed: z.boolean() }).parse(req.body);

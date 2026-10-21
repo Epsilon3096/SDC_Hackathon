@@ -18,6 +18,14 @@ No key or external database is required locally. PGlite runs embedded PostgreSQL
 
 `npm test` runs domain, API and connector tests. `npm run build` checks TypeScript and builds the client. `npm start` serves the built client and API together. `npm run ingest` performs a real read-only arXiv fetch/validation probe; use Evidence Studio to save fetched articles in a workspace.
 
+`npm run verify` runs the test suite, production build and built-app smoke check. The prepared GitHub workflow checks Node 22/24 on Windows/Linux and has a separate disposable PostgreSQL job; it has not yet run on GitHub. See `docs/OPERATIONS.md` for the exact checks and real-data pilot gates.
+
+## Submission materials
+
+`docs/submission/README.md` indexes the Console proposal, technical declaration, requirements-to-proof matrix, 6:40 recording script, deck copy, dependency inventory and blank evaluation sheet. All eight bounded template responses have reproducible word checks. Required human declarations, baseline evidence and public links remain clearly marked. Private contact details and signed forms do not belong in this public source directory.
+
+Gemini provided ideas and critical review only during this release pass. Accepted changes and rejected overclaims are documented in `docs/GEMINI_REVIEW.md`. This remains a synthetic demonstration, with no live runtime model inference or verified commercial deployment.
+
 ## Product boundaries
 
 - Two editable synthetic worker presets, six selected skills, three exploratory routes and two adoption scenarios.

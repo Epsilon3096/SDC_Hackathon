@@ -8,6 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "start": "tsx src/server/index.ts",
     "test": "vitest run",
+    "test:release": "tsx scripts/verify-built-app.ts",
+    "verify": "npm test && npm run build && npm run test:release",
     "check": "tsc --noEmit",
     "ingest": "tsx src/server/ingest-cli.ts",
     "replit": "npm run build && HOST=0.0.0.0 DEMO_REVIEW=true npm start"

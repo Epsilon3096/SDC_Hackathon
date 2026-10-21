@@ -4,7 +4,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { buildApp } from '../src/server/app';
 import { hash, Store } from '../src/server/store';
-import { skillMultiplier } from '../src/shared/engine';
+import { createPlan, skillMultiplier } from '../src/shared/engine';
 import type { AppState, Mapping, Plan, Profile, Snapshot } from '../src/shared/types';
 
 type App = Awaited<ReturnType<typeof buildApp>>;
@@ -154,6 +154,29 @@ describe('saved plans and prerequisite progress', () => {
     expect(response.statusCode).toBe(200);
     return response.json<{ id: string }>();
   }
+  it('preserves every saved plan at capacity and still permits idempotent adoption', async () => {
+    const current = await session(local);
+    const workspace = hash(current.cookie.split('=')[1]);
+    await store.mutate(workspace, state => {
+      const profile = state.profiles.find(item => item.id === 'aina')!;
+      const snapshot = state.snapshots[0];
+      state.plans = Array.from({ length: 50 }, (_, index) => createPlan({ ...profile, version: index + 1 }, snapshot, 'moderate', 'qa', state.roles, state.resources)).reverse();
+      profile.version = 50;
+      const oldest = state.plans.at(-1)!;
+      oldest.completed = [oldest.steps[0].resourceId];
+    });
+    const before = await state(local, current.cookie);
+    const blocked = await local.inject({ method: 'POST', url: '/api/plans', headers: json(current.cookie), payload: { profileId: 'aina', roleId: 'process', scenario: 'moderate', expectedProfileVersion: 50 } });
+    expect(blocked.statusCode).toBe(422);
+    expect(blocked.json().error).toContain('preserved');
+    const after = await state(local, current.cookie);
+    expect(after.plans).toEqual(before.plans);
+    expect(after.audit).toEqual(before.audit);
+    const repeat = await local.inject({ method: 'POST', url: '/api/plans', headers: json(current.cookie), payload: { profileId: 'aina', roleId: 'qa', scenario: 'moderate', expectedProfileVersion: 50 } });
+    expect(repeat.statusCode).toBe(200);
+    expect(repeat.json<Plan>()).toEqual(before.plans[0]);
+    expect((await state(local, current.cookie)).plans).toEqual(before.plans);
+  });
   it('rejects adoption after another tab changes the reviewed profile and preserves saved plans', async () => {
     const current = await session(local);
     const profile = current.state.profiles.find(p => p.id === 'aina')!;
