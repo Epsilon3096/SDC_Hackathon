@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { mkdir, mkdtemp } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { buildApp } from '../src/server/app';
-import { Store } from '../src/server/store';
+import { hash, Store } from '../src/server/store';
 import type { AppState, Plan, Profile } from '../src/shared/types';
 
 type App = Awaited<ReturnType<typeof buildApp>>;
@@ -78,6 +78,69 @@ describe('profile persistence, isolation and optimistic writes', () => {
 });
 
 describe('saved plans and prerequisite progress', () => {
+  async function adopt(cookie: string, selection = { profileId: 'aina', scenario: 'moderate', roleId: 'qa' }) {
+    const response = await local.inject({ method: 'POST', url: '/api/plans', headers: json(cookie), payload: selection });
+    expect(response.statusCode).toBe(200);
+    return response.json<Plan>();
+  }
+  async function complete(cookie: string, plan: Plan) {
+    for (const step of plan.steps) {
+      const response = await local.inject({ method: 'PATCH', url: `/api/plans/${plan.id}/progress`, headers: json(cookie), payload: { resourceId: step.resourceId, completed: true } });
+      expect(response.statusCode).toBe(200);
+    }
+  }
+  async function publishNext(cookie: string) {
+    const before = await state(local, cookie);
+    expect((await review(local, cookie, 'mapping-intel-ai-literacy')).statusCode).toBe(200);
+    const response = await local.inject({ method: 'POST', url: '/api/snapshots', headers: json(cookie), payload: { expectedActiveId: before.activeSnapshotId, mappingIds: ['mapping-intel-ai-literacy'], title: 'Revised learning priorities' } });
+    expect(response.statusCode).toBe(200);
+    return response.json<{ id: string }>();
+  }
+  it('preserves valid completion when adopting a new snapshot and keeps repeat adoption idempotent', async () => {
+    const current = await session(local);
+    const original = await adopt(current.cookie);
+    await complete(current.cookie, original);
+    const originalCompleted = (await state(local, current.cookie)).plans.find(p => p.id === original.id)!;
+    const snapshot = await publishNext(current.cookie);
+    const updated = await adopt(current.cookie);
+    expect(updated.id).not.toBe(original.id);
+    expect(updated.snapshotId).toBe(snapshot.id);
+    const retained = originalCompleted.completed.filter(id => updated.steps.some(step => step.resourceId === id));
+    expect(retained.length).toBeGreaterThan(0);
+    expect([...updated.completed].sort()).toEqual([...retained].sort());
+    expect((await state(local, current.cookie)).plans.find(p => p.id === original.id)).toEqual(originalCompleted);
+    const repeated = await adopt(current.cookie);
+    expect(repeated).toEqual(updated);
+    expect((await state(local, current.cookie)).plans).toHaveLength(2);
+  });
+  it('does not transfer completion to another worker or another route', async () => {
+    const current = await session(local);
+    const original = await adopt(current.cookie);
+    await complete(current.cookie, original);
+    const differentRole = await adopt(current.cookie, { profileId: 'aina', scenario: 'moderate', roleId: 'process' });
+    const differentProfile = await adopt(current.cookie, { profileId: 'farid', scenario: 'moderate', roleId: 'qa' });
+    expect(differentRole.steps.some(step => original.steps.some(old => old.resourceId === step.resourceId))).toBe(true);
+    expect(differentProfile.steps.some(step => original.steps.some(old => old.resourceId === step.resourceId))).toBe(true);
+    expect(differentRole.completed).toEqual([]);
+    expect(differentProfile.completed).toEqual([]);
+  });
+  it('drops stale and transitively invalid completion when a prerequisite is absent', async () => {
+    const current = await session(local);
+    const original = await adopt(current.cookie);
+    expect(original.steps.find(step => step.resourceId === 'root-cause-practice')?.prerequisiteIds).toContain('quality-data-practice');
+    const workspace = hash(current.cookie.split('=')[1]);
+    // Deliberately inconsistent legacy state exercises the migration boundary.
+    await store.mutate(workspace, s => {
+      const plan = s.plans.find(p => p.id === original.id)!;
+      plan.completed = ['inspection-evidence', 'quality-data-practice', 'root-cause-practice', 'removed-legacy-resource'];
+    });
+    await publishNext(current.cookie);
+    const revised = await adopt(current.cookie);
+    expect(revised.completed).toEqual(['inspection-evidence']);
+    expect(revised.completed).not.toContain('quality-data-practice');
+    expect(revised.completed).not.toContain('root-cause-practice');
+    expect(revised.completed).not.toContain('removed-legacy-resource');
+  });
   it('enforces prerequisites, cascades an uncheck and never increases skill proficiency', async () => {
     const current = await session(local); const selection = { profileId: 'aina', scenario: 'moderate', roleId: 'qa' };
     const save = await local.inject({ method: 'POST', url: '/api/plans', headers: json(current.cookie), payload: selection });

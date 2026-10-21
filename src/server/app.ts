@@ -93,8 +93,19 @@ export async function buildApp(options: AppOptions) {
     const input = select(state, req.body);
     const existing = state.plans.find(p => p.profileId === input.profileId && p.profileVersion === input.profile.version && p.snapshotId === input.snapshot.id && p.scenario === input.scenario && p.roleId === input.roleId);
     if (existing) return existing;
-    const plan = { ...createPlan(input.profile, input.snapshot, input.scenario, input.roleId, state.roles, state.resources), id: randomUUID(), createdAt: new Date().toISOString(), completed: [] };
+    const plan = { ...createPlan(input.profile, input.snapshot, input.scenario, input.roleId, state.roles, state.resources), id: randomUUID(), createdAt: new Date().toISOString(), completed: [] as string[] };
     if (plan.steps.length === 0) fail(422, 'No feasible learning steps are available. Review your constraints first.');
+    const previous = state.plans.find(p => p.profileId === input.profileId && p.roleId === input.roleId);
+    if (previous) {
+      // Resource IDs refer to this immutable starter catalogue. Carry completion
+      // only within the same worker/route and only while prerequisites still hold.
+      plan.completed = previous.completed.filter(id => plan.steps.some(step => step.resourceId === id));
+      let changed = true;
+      while (changed) {
+        const valid = plan.completed.filter(id => plan.steps.find(step => step.resourceId === id)!.prerequisiteIds.every(required => plan.completed.includes(required)));
+        changed = valid.length !== plan.completed.length; plan.completed = valid;
+      }
+    }
     state.plans.unshift(plan); state.plans = state.plans.slice(0, 50); audit(state, 'plan.adopted', plan.roleId + ' · ' + plan.snapshotId); return plan;
   }));
   app.patch<{ Params: { id: string } }>('/api/plans/:id/progress', async req => {
