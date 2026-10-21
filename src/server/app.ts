@@ -27,6 +27,13 @@ export async function buildApp(options: AppOptions) {
   await app.register(cookie);
   await app.register(rateLimit, { max: 180, timeWindow: '1 minute' });
   const workspaceIds = new WeakMap<FastifyRequest, string>();
+  const isRehearsal = (req: FastifyRequest) => req.headers['x-shiftbridge-workspace'] === 'rehearsal';
+  function generation(req: FastifyRequest) {
+    if (!isRehearsal(req)) return undefined;
+    const expected = req.headers['x-shiftbridge-rehearsal-generation'];
+    if (typeof expected !== 'string' || !z.uuid().safeParse(expected).success) fail(409, 'Load the current rehearsal generation before making changes.');
+    return expected as string;
+  }
   const cooldowns = new Map<string, number>();
   function cooldown(key: string, ms: number) {
     const now = Date.now(); const previous = cooldowns.get(key) || 0;
@@ -39,6 +46,8 @@ export async function buildApp(options: AppOptions) {
     if (options.production) reply.header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
     if (!req.url.startsWith('/api/') || req.url === '/api/health') return;
     reply.header('Cache-Control', 'no-store');
+    const mode = req.headers['x-shiftbridge-workspace'];
+    if (mode !== undefined && mode !== 'normal' && mode !== 'rehearsal') fail(400, 'Choose the normal or rehearsal workspace.');
     if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
       const origin = req.headers.origin;
       const allowed = options.publicOrigin ? [options.publicOrigin] : [((options.production ? 'https://' : 'http://') + req.headers.host)];
@@ -52,17 +61,29 @@ export async function buildApp(options: AppOptions) {
       token = randomBytes(32).toString('hex');
       reply.setCookie('shiftbridge_session', token, { httpOnly: true, secure: !!options.production, sameSite: 'strict', path: '/', maxAge: 60 * 60 * 24 * 14 });
     }
-    workspaceIds.set(req, hash(token));
+    workspaceIds.set(req, hash(isRehearsal(req) ? 'shiftbridge:rehearsal:' + token : token));
+    if (isRehearsal(req) && req.url.startsWith('/api/inference')) fail(403, 'GPU inference is disabled in rehearsal. Use the normal workspace with reviewer access.');
+    const path = req.url.split('?')[0];
+    if (isRehearsal(req) && !['GET', 'HEAD', 'OPTIONS'].includes(req.method) && !['/api/rehearsal/start', '/api/rehearsal/restart'].includes(path)) generation(req);
   });
   const wid = (req: FastifyRequest) => workspaceIds.get(req)!;
+  const readWorkspace = (req: FastifyRequest) => store.read(wid(req), !isRehearsal(req));
+  const mutate = <T>(req: FastifyRequest, fn: (state: StoredState) => T) => store.mutate(wid(req), fn, generation(req));
   function validateMapping(state: StoredState, mapping: Mapping) {
     const source = state.sources.find(s => s.id === mapping.sourceId) || fail(422, 'A real supporting source is required.');
     if (mapping.fixture || source.type === 'synthetic') fail(422, 'Only supported real-source mappings may be published.');
     if (mapping.passage.trim().length < 12 || !source.excerpt.includes(mapping.passage)) fail(422, 'A nonempty exact supporting passage is required.');
     if (!Number.isFinite(mapping.deltaModerate) || !Number.isFinite(mapping.deltaFast) || Math.abs(mapping.deltaModerate) > 0.25 || Math.abs(mapping.deltaFast) > 0.5 || (!mapping.deltaModerate && !mapping.deltaFast)) fail(422, 'The mapping needs a valid bounded scenario rule.');
+    if (mapping.roleIds !== undefined) validateScope(state, mapping.roleIds);
   }
-  async function isAdmin(req: FastifyRequest) { return !!options.localReviewer || (await store.read(wid(req))).adminUntil > Date.now(); }
-  async function requireAdmin(req: FastifyRequest, paid = false) { if ((!options.demoReview || paid) && !await isAdmin(req)) fail(403, 'Reviewer access is required. Use the team review token.'); }
+  function validateScope(state: StoredState, roleIds: string[]) {
+    if (!Array.isArray(roleIds) || !roleIds.length || roleIds.length > 3 || new Set(roleIds).size !== roleIds.length || roleIds.some(id => !state.roles.some(role => role.id === id))) fail(422, 'Choose one or more existing routes, with each route listed once.');
+  }
+  async function isAdmin(req: FastifyRequest) { return !!options.localReviewer || (await readWorkspace(req)).adminUntil > Date.now(); }
+  async function requireAdmin(req: FastifyRequest, paid = false) {
+    if (isRehearsal(req)) { if (paid) fail(403, 'GPU inference is disabled in rehearsal.'); return; }
+    if ((!options.demoReview || paid) && !await isAdmin(req)) fail(403, 'Reviewer access is required. Use the team review token.');
+  }
   function select(state: StoredState, input: unknown) {
     const selection = selectionSchema.parse(input);
     const profile = state.profiles.find(p => p.id === selection.profileId) || fail(404, 'Profile not found.');
@@ -71,18 +92,28 @@ export async function buildApp(options: AppOptions) {
     return { ...selection, profile, snapshot };
   }
   app.get('/api/health', async () => ({ ok: true, version: '0.1.0' }));
+  app.post('/api/rehearsal/start', async req => {
+    if (!isRehearsal(req)) fail(400, 'Select the rehearsal workspace explicitly.');
+    z.object({}).strict().parse(req.body);
+    return store.startRehearsal(wid(req));
+  });
+  app.post('/api/rehearsal/restart', async req => {
+    if (!isRehearsal(req)) fail(400, 'Select the rehearsal workspace explicitly.');
+    const { expectedGeneration } = z.object({ expectedGeneration: z.uuid() }).strict().parse(req.body);
+    return store.restartRehearsal(wid(req), expectedGeneration);
+  });
   app.get('/api/state', async (req): Promise<AppState> => {
-    const { state, adminUntil } = await store.read(wid(req));
+    const { state, adminUntil } = await readWorkspace(req);
     const authenticated = adminUntil > Date.now();
-    return { ...state, connection: { database: store.kind, runpod: configured(runpod), adminConfigured: !!options.adminToken || !!options.localReviewer, admin: !!options.localReviewer || !!options.demoReview || authenticated, reviewMode: options.localReviewer ? 'local' : authenticated ? 'authenticated' : options.demoReview ? 'demo' : 'locked', connector: 'arXiv Atom API / daily RSS fallback · manual refresh' } };
+    return { ...state, connection: { database: store.kind, runpod: configured(runpod), adminConfigured: !!options.adminToken || !!options.localReviewer, admin: isRehearsal(req) || !!options.localReviewer || !!options.demoReview || authenticated, reviewMode: isRehearsal(req) ? 'demo' : options.localReviewer ? 'local' : authenticated ? 'authenticated' : options.demoReview ? 'demo' : 'locked', connector: 'arXiv Atom API / daily RSS fallback · manual refresh' } };
   });
   app.get('/api/evaluate', async (req): Promise<Evaluation> => {
-    const { state } = await store.read(wid(req)); const input = select(state, req.query);
+    const { state } = await readWorkspace(req); const input = select(state, req.query);
     return { profile: input.profile, snapshot: input.snapshot, scenario: input.scenario, assessments: assess(input.profile, input.snapshot, input.scenario, state.roles), plan: createPlan(input.profile, input.snapshot, input.scenario, input.roleId, state.roles, state.resources) };
   });
   app.put<{ Params: { id: string } }>('/api/profiles/:id', async req => {
     const input = profileSchema.parse(req.body);
-    return store.mutate(wid(req), state => {
+    return mutate(req, state => {
       const index = state.profiles.findIndex(p => p.id === req.params.id);
       if (index === -1) fail(404, 'Profile not found.');
       if (state.profiles[index].version !== input.version) fail(409, 'This profile changed in another tab. Reload before saving.');
@@ -90,7 +121,7 @@ export async function buildApp(options: AppOptions) {
       state.profiles[index] = profile; audit(state, 'profile.saved', profile.id + ' · version ' + profile.version); return profile;
     });
   });
-  app.post('/api/plans', async req => store.mutate(wid(req), state => {
+  app.post('/api/plans', async req => mutate(req, state => {
     const requested = adoptionSchema.parse(req.body);
     const input = select(state, requested);
     if (requested.expectedProfileVersion !== undefined && requested.expectedProfileVersion !== input.profile.version) fail(409, 'This profile changed after the plan was reviewed. Reload and inspect the updated plan before adopting it.');
@@ -114,7 +145,7 @@ export async function buildApp(options: AppOptions) {
   }));
   app.patch<{ Params: { id: string } }>('/api/plans/:id/progress', async req => {
     const input = z.object({ resourceId: idSchema, completed: z.boolean() }).parse(req.body);
-    return store.mutate(wid(req), state => {
+    return mutate(req, state => {
       const plan = state.plans.find(p => p.id === req.params.id) || fail(404, 'Saved plan not found.');
       const step = plan.steps.find(s => s.resourceId === input.resourceId) || fail(400, 'Resource is not part of this saved plan.');
       if (input.completed && step.prerequisiteIds.some(p => !plan.completed.includes(p))) fail(409, 'Complete the prerequisite steps first.');
@@ -130,25 +161,30 @@ export async function buildApp(options: AppOptions) {
   app.post('/api/admin/login', { config: { rateLimit: { max: 5, timeWindow: '1 minute' } } }, async req => {
     const { token } = z.object({ token: z.string().min(1).max(300) }).parse(req.body);
     if (!options.adminToken || !timingSafeEqual(Buffer.from(hash(token)), Buffer.from(hash(options.adminToken)))) fail(401, 'Reviewer token is incorrect or not configured.');
-    await store.setAdmin(wid(req), Date.now() + 3600000); return { ok: true };
+    await store.setAdmin(wid(req), Date.now() + 3600000, generation(req)); return { ok: true };
   });
-  app.post('/api/admin/logout', async req => { await store.setAdmin(wid(req), 0); return { ok: true }; });
+  app.post('/api/admin/logout', async req => { await store.setAdmin(wid(req), 0, generation(req)); return { ok: true }; });
   app.post('/api/mappings', async req => {
     await requireAdmin(req);
-    const input = z.object({ sourceId: idSchema, passage: z.string().trim().min(12).max(1200), implication: z.string().trim().min(20).max(800), skillId: skillEnum, deltaModerate: z.number().min(-0.25).max(0.25), deltaFast: z.number().min(-0.5).max(0.5), rationale: z.string().trim().min(20).max(1200) }).parse(req.body);
-    return store.mutate(wid(req), state => {
+    const input = z.object({ sourceId: idSchema, passage: z.string().trim().min(12).max(1200), implication: z.string().trim().min(20).max(800), skillId: skillEnum, deltaModerate: z.number().min(-0.25).max(0.25), deltaFast: z.number().min(-0.5).max(0.5), rationale: z.string().trim().min(20).max(1200), roleIds: z.array(idSchema).min(1).max(3).default(['qa']) }).parse(req.body);
+    return mutate(req, state => {
       const source = state.sources.find(s => s.id === input.sourceId) || fail(404, 'Source not found.');
       if (source.type === 'synthetic') fail(422, 'Synthetic evidence cannot support published recommendations.');
       if (!source.excerpt.includes(input.passage)) fail(422, 'The passage must appear exactly in the stored source excerpt.');
-      if (state.mappings.length >= 100) fail(422, 'This demonstration workspace has reached its mapping limit.');
       if (!input.deltaModerate && !input.deltaFast) fail(422, 'A mapping must define a nonzero scenario change.');
-      const mapping: Mapping = { ...input, id: randomUUID(), status: 'pending', reviewNote: '', reviewedAt: null, fixture: false };
+      validateScope(state, input.roleIds);
+      const roleIds = [...input.roleIds].sort();
+      const scope = (mapping: Mapping) => mapping.roleIds === undefined ? state.roles.map(role => role.id) : Array.isArray(mapping.roleIds) ? mapping.roleIds : [];
+      const existing = state.mappings.find(mapping => !mapping.fixture && mapping.sourceId === input.sourceId && mapping.passage === input.passage && mapping.implication === input.implication && mapping.skillId === input.skillId && mapping.deltaModerate === input.deltaModerate && mapping.deltaFast === input.deltaFast && mapping.rationale === input.rationale && JSON.stringify([...scope(mapping)].sort()) === JSON.stringify(roleIds));
+      if (existing) return existing;
+      if (state.mappings.length >= 100) fail(422, 'This demonstration workspace has reached its mapping limit.');
+      const mapping: Mapping = { ...input, roleIds, id: randomUUID(), status: 'pending', reviewNote: '', reviewedAt: null, fixture: false };
       state.mappings.push(mapping); audit(state, 'mapping.proposed', mapping.id); return mapping;
     });
   });
   app.post<{ Params: { id: string } }>('/api/evidence/:id/review', async req => {
     await requireAdmin(req); const input = z.object({ decision: z.enum(['approved', 'rejected']), note: z.string().trim().min(12).max(1200) }).parse(req.body);
-    return store.mutate(wid(req), state => {
+    return mutate(req, state => {
       const mapping = state.mappings.find(m => m.id === req.params.id) || fail(404, 'Mapping not found.');
       if (state.snapshots.some(s => s.mappings.some(m => m.id === mapping.id))) fail(409, 'Published mappings are immutable. Retire or replace them in a new snapshot.');
       if (input.decision === 'approved' && mapping.fixture) fail(422, 'This demonstration fixture has insufficient support and cannot be published. Reject it and record why.');
@@ -158,7 +194,7 @@ export async function buildApp(options: AppOptions) {
   });
   app.post('/api/snapshots', async req => {
     await requireAdmin(req); const input = z.object({ expectedActiveId: idSchema, mappingIds: z.array(idSchema).max(50).default([]), retireMappingIds: z.array(idSchema).max(50).default([]), retirementNote: z.string().trim().max(1200).optional(), title: z.string().trim().min(1).max(80) }).parse(req.body);
-    return store.mutate(wid(req), state => {
+    return mutate(req, state => {
       if (state.activeSnapshotId !== input.expectedActiveId) fail(409, 'The active snapshot changed. Reload and inspect the difference before publishing.');
       if (state.snapshots.length >= 50) fail(422, 'This demonstration workspace has reached its snapshot limit.');
       const parent = state.snapshots.find(s => s.id === state.activeSnapshotId)!;
@@ -178,7 +214,7 @@ export async function buildApp(options: AppOptions) {
   app.post('/api/ingest', async req => {
     await requireAdmin(req); cooldown(wid(req) + ':ingest', 30000);
     let incoming; try { incoming = await fetchArxiv(options.fetcher); } catch { fail(503, 'The live arXiv feed could not be retrieved. Existing evidence and plans are unchanged. Retry later.'); }
-    return store.mutate(wid(req), state => {
+    return mutate(req, state => {
       const result = mergeSourceBatch(state.sources, incoming!);
       if (state.sources.length > 200) fail(422, 'This demonstration workspace has reached its source limit.');
       audit(state, 'source.refreshed', result.created + ' new article version(s); ' + result.enriched + ' existing source date(s) verified; no mappings automatically approved');
@@ -186,23 +222,23 @@ export async function buildApp(options: AppOptions) {
     });
   });
   app.post<{ Params: { sourceId: string } }>('/api/inference/:sourceId', async req => {
-    await requireAdmin(req, true); const { state } = await store.read(wid(req));
+    await requireAdmin(req, true); const { state } = await readWorkspace(req);
     const source = state.sources.find(s => s.id === req.params.sourceId) || fail(404, 'Source not found.');
     if (source.type === 'synthetic') fail(422, 'Use a real source for the live GPU relevance check.');
     const existing = state.inferences.find(i => i.id === cacheKey(source, runpod) && ['completed', 'pending'].includes(i.status));
     if (existing) return { ...existing, mode: existing.status === 'completed' ? 'cached' : existing.mode };
     cooldown(wid(req) + ':inference', 30000);
     let inference; try { inference = await submitInference(source, runpod, options.fetcher); } catch { fail(503, 'RunPod submission failed. No recommendation was changed.'); }
-    return store.mutate(wid(req), s => { s.inferences = [inference!, ...s.inferences.filter(i => i.id !== inference!.id)].slice(0, 100); audit(s, 'inference.' + inference!.status, source.id); return inference!; });
+    return mutate(req, s => { s.inferences = [inference!, ...s.inferences.filter(i => i.id !== inference!.id)].slice(0, 100); audit(s, 'inference.' + inference!.status, source.id); return inference!; });
   });
   app.post<{ Params: { id: string } }>('/api/inference-status/:id', async req => {
-    await requireAdmin(req, true); const { state } = await store.read(wid(req));
+    await requireAdmin(req, true); const { state } = await readWorkspace(req);
     const inference = state.inferences.find(i => i.id === req.params.id) || fail(404, 'Inference not found.');
     if (inference.status !== 'pending') return inference;
     cooldown(wid(req) + ':poll:' + inference.id, 2000);
     const source = state.sources.find(s => s.id === inference.sourceId)!;
     let updated; try { updated = await pollInference(inference, source, runpod, options.fetcher); } catch { fail(503, 'Provider status could not be verified. The pending job and published recommendations are preserved.'); }
-    return store.mutate(wid(req), s => { const index = s.inferences.findIndex(i => i.id === inference.id); s.inferences[index] = updated!; if (updated!.status !== 'pending') audit(s, 'inference.' + updated!.status, updated!.id); return updated!; });
+    return mutate(req, s => { const index = s.inferences.findIndex(i => i.id === inference.id); s.inferences[index] = updated!; if (updated!.status !== 'pending') audit(s, 'inference.' + updated!.status, updated!.id); return updated!; });
   });
   app.setErrorHandler((error, _req, reply) => {
     if (error instanceof z.ZodError) return reply.code(400).send({ error: 'Invalid input: ' + error.issues.map(i => i.path.join('.') + ' ' + i.message).join('; ').slice(0, 700) });

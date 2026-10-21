@@ -5,7 +5,7 @@ ShiftBridge is a working Domain 1 prototype. It is not a claim of competition ac
 ## Verified locally
 
 - TypeScript checking and the production Vite build pass.
-- All 119 automated tests pass, covering deterministic assessments and score intervals, unknown qualifications, prerequisites, evidence review/publication/retirement, source deduplication, workspace isolation, optimistic concurrency, saved plan adoption and database reopen persistence. Client helper tests reject mismatched evaluations and oversized default excerpts.
+- All 158 automated tests pass across 11 files, covering deterministic assessments and score intervals, role-scoped mappings, unknown qualifications, prerequisites, evidence review/publication/retirement, source and proposal deduplication, workspace isolation, optimistic concurrency, saved decision capture/export, rehearsal generation guards and database reopen persistence. Client helper tests cover matching evaluation context, saved next actions, plan-order differences and genuine rehearsal milestones.
 - Production dependency audit reports zero known vulnerabilities at the time of this check.
 - Browser checks cover all eight pages at a 1280px viewport without horizontal overflow. Profile edits, plan progress, evidence approval, separate publication, rejection and explicit plan adoption were exercised against the real API.
 - Approving the supported Intel mapping does not publish it. Publishing changes the active assessment and learning priority while preserving the accepted plan until adoption. Adoption retains completed steps with valid prerequisites.
@@ -14,10 +14,15 @@ ShiftBridge is a working Domain 1 prototype. It is not a claim of competition ac
 - Saved schedule continuity was browser-tested: a plan adopted at 8h/week retained its 2-week schedule and 25% completion after the profile changed to 4h/week. Older plans without captured constraints explicitly label the original pace as unrecorded.
 - A documented retirement was published through the local UI. The comparison from v2 to v3 shows the removed interpretation and reason; history retains v1 and v2. API regressions separately verify weaker-rule replacement and independent scenario progress.
 - A floating-point boundary fix prevents complete profiles from displaying an inverted score interval. Three regression tests cover identical known bounds and containment of unknown-profile endpoints.
+- The complete guided rehearsal was exercised through the browser: baseline saved, Intel passage inspected/approved, QA-scoped snapshot published, both weak mappings rejected, old/new step positions inspected, and current revision explicitly adopted. All five milestones were recorded by real application state. The constructed Farid case moved AI inspection learning from step 3 to step 1; the saved decision brief recorded alignment 51.02/100 under moderate adoption, not a measured outcome.
+- The brief was downloaded through the app and inspected. It contains original profile v1, engine 1.1.0, the adopted snapshot, 4h/week and RM 0 constraints, role scope, reading prerequisites and the recorded review reason. Legacy plans retain an explicit missing-original-assessment notice.
+- Restarting the rehearsal reset only its synthetic data to 0/5 milestones. Exiting returned to the regular workspace with Aina's earlier 1/4 completion, profile-v5 plan and original 8h/week schedule intact. API tests also cover stale-tab writes, concurrent restarts, visitor isolation and delayed import commits. GPU requests are blocked in rehearsal.
+- Evidence Studio now separates Review, Publish and History. A draft research review note remained intact while a different mapping was rejected; approval opened the Publish stage without selecting or publishing a rule automatically.
+- Updated mobile checks cover all eight pages at 390px, plus the guide and rendered plan comparison, with no horizontal overflow. Main explanatory text and guide text measured 14px; metadata and controls were enlarged. Keyboard navigation and separate pointer navigation were exercised.
 
 ## Replit development verification
 
-Replit setup and publishing are currently on hold at the participant's request. Development continues locally; the latest correctness and retirement changes have not been uploaded. The following records earlier verification, not verification of the latest source on Replit.
+Replit setup and publishing are currently on hold at the participant's request. Development continues locally; the latest correctness, rehearsal and decision-brief changes have not been uploaded. The following records earlier verification, not verification of the latest source on Replit.
 
 - Source imported into https://replit.com/@kingyang3096/ShiftBridge.
 - Node 22.22.0 runs the production build and Fastify on port 3001 with managed PostgreSQL. The HTTPS startup configuration includes Replit development environments.
@@ -31,6 +36,7 @@ Replit setup and publishing are currently on hold at the participant's request. 
 - The final source must later be uploaded and reverified in Replit. The earlier hosted test run had one platform-specific temporary-directory failure; the local fix now passes, but it has not been rerun remotely. A published deployment needs separate verification. See DEPLOYMENT.md.
 - RunPod remains unconfigured at the participant's request. The adapter has mocked transport tests, but no deployed worker or live GPU proof.
 - Personas and practice datasets are synthetic. Role requirements and weights are transparent prototype assumptions, not universal hiring standards. Adjacent-role qualification requirements remain unverified.
+- New Intel mappings are QA-scoped. Older mappings without stored scope preserve their historical all-route behaviour and display a legacy label; correcting an old published scope requires retirement and replacement, not silent rewriting.
 - Four-hour learning blocks are team planning estimates. No measured time-saving or employment outcome is claimed; the evaluation protocol is prepared for real participants.
 - Submission documents, public repository, final recording and sponsor-compliance verification remain separate readiness tasks.
 

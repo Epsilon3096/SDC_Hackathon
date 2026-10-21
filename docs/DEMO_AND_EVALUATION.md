@@ -2,6 +2,10 @@
 
 ## Six-minute demonstration
 
+Start with **Guided demo** in the application header. It creates or resumes an isolated rehearsal; **Restart this demonstration** offers an explicit reset of that rehearsal only. The ordinary workspace is preserved. Use the guide's actions to return to Farid, QA and moderate adoption. Hide the guide temporarily when presenting the calculation or learning sequence.
+
+The demonstration seeds Farid with documentation level 1, quality-data level 0, four hours/week and RM 0. Show these assumptions. This is a constructed comparison with real application/database operations, not a real worker result or a live-news simulation. Each guide milestone is derived from stored decisions. Use the real review and publish controls; no step silently performs them.
+
 1. **The decision.** A quality inspector has limited weekly study time and needs a justified next learning action. Explain the Malaysian TalentCorp E&E context and keep upgraded QA as a valid route.
 2. **The person.** Choose Aina or Farid; edit one skill or weekly-hours constraint; save it. Explain synthetic data, selected-skill coverage and unknown entry requirements.
 3. **The baseline.** Compare the three routes. Open a contribution breakdown and identify one gap. Adopt a learning plan and note the evidence snapshot it uses.
@@ -9,6 +13,8 @@
 5. **The change.** Compare baseline/current results and moderate/faster adoption. A reduced alignment score means the requirements became more demanding, not that the worker lost skills. Inspect changed learning priority. Do not claim the plan order changed if it did not. Adopt the revised plan only after comparison.
 6. **The restraint.** Reject the synthetic retail chatbot mapping and the related-but-insufficient research mapping. Confirm the active snapshot and accepted plan stay unchanged. Show a genuine source refresh if available; otherwise state the fetch error and demonstrate preserved state without calling it live success.
 7. **The evidence of quality.** Show actual test results, source limitations and any measured usability result. Explain RunPod's current unconfigured status and planned narrow responsibility honestly.
+
+After adoption, use **Download decision brief** on the saved learning plan. The text includes the original profile, assessment, model version, constraints, source references, ordered practice and limitations. A new profile edit must not rewrite that original decision. Legacy plans without captured assessments say so. Do not mark a learning exercise complete merely to make progress look better; rehearsal checkboxes represent simulated activity only if explicitly demonstrated as such.
 
 Suggested timing: problem 40s; profile 40s; comparison 60s; evidence/publication 80s; changed plan 60s; restraint 40s; validation 40s.
 

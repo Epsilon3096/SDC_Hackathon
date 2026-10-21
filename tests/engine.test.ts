@@ -241,6 +241,30 @@ describe('prerequisite-aware affordable starter plans', () => {
     expect(revised.profileVersion).toBe(original.profileVersion + 1);
   });
 
+  it('detaches the original decision from later profile and evidence edits', () => {
+    const profile = aina();
+    const snapshot = withMappings(approved());
+    const plan = createPlan(profile, snapshot, 'fast', 'qa', roles, resources);
+    const captured = structuredClone(plan.decision);
+    expect(plan.decision?.assessment).toEqual(assess(profile, snapshot, 'fast', roles).find(item => item.roleId === 'qa'));
+    expect(plan.decision?.profile).toEqual(profile);
+    expect(plan.decision?.profile).not.toBe(profile);
+    expect(plan.decision?.profile.skills).not.toBe(profile.skills);
+    expect(plan.decision?.engineVersion).toBeTruthy();
+    profile.skills.ai_inspection = 4;
+    profile.name = 'Edited synthetic worker';
+    profile.version += 1;
+    snapshot.mappings[0].rationale = 'A later interpretation';
+    plan.completed.push(plan.steps[0].resourceId);
+    expect(plan.decision).toEqual(captured);
+    const revision = createPlan(profile, snapshot, 'fast', 'qa', roles, resources);
+    expect(revision.decision?.profile.version).toBe(profile.version);
+    expect(revision.decision?.assessment.score).not.toBe(captured?.assessment.score);
+    revision.decision!.profile.skills.records = 0;
+    expect(plan.decision).toEqual(captured);
+    expect(profile.skills.records).toBe(2.5);
+  });
+
   it('retains the input constraints even when no feasible steps can be scheduled', () => {
     const profile = aina(); profile.weeklyHours = 0; profile.budget = 17;
     const plan = createPlan(profile, initialSnapshot, 'moderate', 'qa', roles, resources);

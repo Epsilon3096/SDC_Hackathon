@@ -4,6 +4,12 @@ A focused workforce planning prototype for Malaysian manufacturing quality inspe
 
 The HTML produced during ideation is a separate design reference. This directory is the actual application.
 
+## Try the guided demonstration
+
+Choose **Guided demo** in the app header. It opens a separate database workspace with a clearly constructed Farid inspection case. Follow five milestones: save the baseline, review the passage, publish a version, reject weak signals, and compare/adopt the new plan. The guide checks saved application state; it does not approve or publish evidence for you. Exit returns to the regular workspace. Restart replaces only the rehearsal data, and stale tabs cannot write into a restarted round. Paid GPU requests are disabled in this mode.
+
+The comparison shows actual old/new learning-step positions, including an honest unchanged-order result when appropriate. Saved plans provide a downloadable text decision brief with the captured profile, assessment, evidence version and study sequence.
+
 ## Start locally
 
 Requires Node.js 22.12+ or 24 and npm. Local verification uses Node 24; the Replit workspace uses Node 22.22. Run `npm ci`, then `npm run dev`, and open `http://127.0.0.1:5173`.
@@ -21,6 +27,7 @@ No key or external database is required locally. PGlite runs embedded PostgreSQL
 - Evidence approval and publication are separate. Rejecting weak evidence does not revert published snapshots. Saved plans change only when the worker adopts a new one.
 - A new snapshot can explicitly retire an active evidence rule with a reason, optionally replacing it with an approved revision. Earlier snapshots and accepted plans retain their original evidence.
 - Saved plans retain the weekly hours and budget used when adopted. Completion carries forward within the same worker, route and scenario; changing one scenario's progress does not rewrite another saved branch.
+- New plans also retain their original profile, assessment and engine version. Legacy plans explicitly report uncaptured decision details instead of reconstructing a historical score from today's profile.
 - Learning blocks combine public resources and team-authored practice estimates. Completing a step does not award a qualification or increase proficiency automatically.
 - No measured employment, wage, emissions or planning-time result is claimed.
 - Real arXiv refresh may fail; the previous reviewed state remains available. Research is not deployment evidence.

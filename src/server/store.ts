@@ -8,6 +8,7 @@ import { profiles, skills, roles, resources, sources, seedMappings, initialSnaps
 type Query = (sql: string, params?: unknown[]) => Promise<{ rows: any[] }>;
 export type StoredState = Omit<AppState, 'connection'>;
 export interface Workspace { state: StoredState; adminUntil: number; }
+class WorkspaceConflict extends Error { statusCode = 409; }
 export const hash = (text: string) => createHash('sha256').update(text).digest('hex');
 export function seed(): StoredState {
   const state = structuredClone({ profiles, skills, roles, resources, sources, mappings: seedMappings, snapshots: [initialSnapshot], activeSnapshotId: initialSnapshot.id, plans: [], inferences: [], audit: [] });
@@ -18,6 +19,17 @@ export function seed(): StoredState {
 export function audit(state: StoredState, action: string, detail: string) {
   state.audit.unshift({ id: randomUUID(), action, detail, at: new Date().toISOString() });
   state.audit = state.audit.slice(0, 300);
+}
+function rehearsalSeed(): StoredState {
+  const state = seed();
+  const farid = state.profiles.find(profile => profile.id === 'farid')!;
+  farid.skills.records = 1; farid.skills.quality_data = 0; farid.weeklyHours = 4;
+  state.rehearsal = { generation: randomUUID(), startedAt: new Date().toISOString(), caseId: 'farid-inspection' };
+  audit(state, 'rehearsal.started', 'Constructed synthetic Farid case: records 1/4, quality-data analysis 0/4, four study hours per week. Seeded public evidence is pending review; no source retrieval, GPU inference, approval or plan adoption was performed. The normal workspace is unchanged.');
+  return state;
+}
+function checkGeneration(state: StoredState, expectedGeneration?: string) {
+  if (state.rehearsal ? state.rehearsal.generation !== expectedGeneration : expectedGeneration !== undefined) throw new WorkspaceConflict('This rehearsal changed or has not been started. Reload the rehearsal before making changes.');
 }
 
 export class Store {
@@ -52,26 +64,51 @@ export class Store {
     this.tail = result.catch(() => undefined);
     return result;
   }
-  async read(id: string): Promise<Workspace> {
+  async read(id: string, initialize = true): Promise<Workspace> {
     return this.transaction(async query => {
-      await query('INSERT INTO shiftbridge_workspaces (id,state) VALUES ($1,$2::jsonb) ON CONFLICT (id) DO NOTHING', [id, JSON.stringify(seed())]);
+      if (initialize) await query('INSERT INTO shiftbridge_workspaces (id,state) VALUES ($1,$2::jsonb) ON CONFLICT (id) DO NOTHING', [id, JSON.stringify(seed())]);
       const { rows } = await query('SELECT state, admin_until FROM shiftbridge_workspaces WHERE id=$1', [id]);
+      if (!rows.length) throw new WorkspaceConflict('Start the rehearsal before loading its workspace.');
       return { state: rows[0].state as StoredState, adminUntil: Number(rows[0].admin_until) };
     });
   }
-  async mutate<T>(id: string, fn: (state: StoredState) => T): Promise<T> {
+  async mutate<T>(id: string, fn: (state: StoredState) => T, expectedGeneration?: string): Promise<T> {
     return this.transaction(async query => {
       await query('INSERT INTO shiftbridge_workspaces (id,state) VALUES ($1,$2::jsonb) ON CONFLICT (id) DO NOTHING', [id, JSON.stringify(seed())]);
       const { rows } = await query('SELECT state FROM shiftbridge_workspaces WHERE id=$1 FOR UPDATE', [id]);
       const state = rows[0].state as StoredState;
+      checkGeneration(state, expectedGeneration);
       const result = fn(state);
       await query('UPDATE shiftbridge_workspaces SET state=$2::jsonb,updated_at=now() WHERE id=$1', [id, JSON.stringify(state)]);
       return result;
     });
   }
-  async setAdmin(id: string, until: number) {
-    await this.read(id);
-    await this.transaction(query => query('UPDATE shiftbridge_workspaces SET admin_until=$2 WHERE id=$1', [id, until]));
+  async setAdmin(id: string, until: number, expectedGeneration?: string) {
+    await this.transaction(async query => {
+      await query('INSERT INTO shiftbridge_workspaces (id,state) VALUES ($1,$2::jsonb) ON CONFLICT (id) DO NOTHING', [id, JSON.stringify(seed())]);
+      const { rows } = await query('SELECT state FROM shiftbridge_workspaces WHERE id=$1 FOR UPDATE', [id]);
+      checkGeneration(rows[0].state as StoredState, expectedGeneration);
+      await query('UPDATE shiftbridge_workspaces SET admin_until=$2 WHERE id=$1', [id, until]);
+    });
+  }
+  async startRehearsal(id: string) {
+    return this.transaction(async query => {
+      await query('INSERT INTO shiftbridge_workspaces (id,state) VALUES ($1,$2::jsonb) ON CONFLICT (id) DO NOTHING', [id, JSON.stringify(rehearsalSeed())]);
+      const { rows } = await query('SELECT state FROM shiftbridge_workspaces WHERE id=$1 FOR UPDATE', [id]);
+      const state = rows[0].state as StoredState;
+      if (!state.rehearsal) throw new WorkspaceConflict('This workspace is not a rehearsal.');
+      return state.rehearsal;
+    });
+  }
+  async restartRehearsal(id: string, expectedGeneration: string) {
+    return this.transaction(async query => {
+      const { rows } = await query('SELECT state FROM shiftbridge_workspaces WHERE id=$1 FOR UPDATE', [id]);
+      if (!rows.length) throw new WorkspaceConflict('Start the rehearsal before restarting it.');
+      checkGeneration(rows[0].state as StoredState, expectedGeneration);
+      const state = rehearsalSeed();
+      await query('UPDATE shiftbridge_workspaces SET state=$2::jsonb,admin_until=0,updated_at=now() WHERE id=$1', [id, JSON.stringify(state)]);
+      return state.rehearsal!;
+    });
   }
   async close() { await this.tail; if (this.embedded) await this.embedded.close(); if (this.pool) await this.pool.end(); }
 }

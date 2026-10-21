@@ -22,6 +22,8 @@ The local loopback server permits review for development. The included Replit co
 
 An evidence review in this prototype affects only the current browser's synthetic workspace. It is not an organisation-wide publication service. Losing the session cookie loses access to that workspace; personal accounts and recovery are outside this preliminary build.
 
+The guided rehearsal uses a separate workspace derived from that same session. Its mode is selected per request, and its current round has a generation token checked inside database transactions. Restarting replaces only rehearsal data; another tab cannot commit stale changes into the new round. Rehearsal review is permitted only within that isolated synthetic workspace, and both GPU submission and polling are disabled there. The normal workspace's reviewer protections are unchanged.
+
 ## Publish
 
 Use a server-capable Replit deployment. Build command: `npm ci && npm run build`. Start command: `NODE_ENV=production HOST=0.0.0.0 DEMO_REVIEW=true npm start`. Set port 3001. Configure the production database. A reviewer token is optional for the isolated demonstration and required before enabling paid inference or a controlled review service.

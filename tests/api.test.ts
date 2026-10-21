@@ -277,6 +277,50 @@ describe('saved plans and prerequisite progress', () => {
 });
 
 describe('review and publication boundaries', () => {
+  it('defaults new mappings to QA, accepts explicit routes and makes identical retries idempotent', async () => {
+    const current = await session(local);
+    const base = current.state.mappings.find(mapping => mapping.id === 'mapping-intel-ai-literacy')!;
+    const input = { sourceId: base.sourceId, passage: base.passage, implication: 'A specific task interpretation for checking route-scoped proposal retries.', skillId: base.skillId, deltaModerate: 0.1, deltaFast: 0.2, rationale: 'The proposed adjustment applies only to the selected routes and requires review.' };
+    const propose = (extra: object = {}) => local.inject({ method: 'POST', url: '/api/mappings', headers: json(current.cookie), payload: { ...input, ...extra } });
+    const first = await propose();
+    expect(first.statusCode).toBe(200);
+    const mapping = first.json<Mapping>();
+    expect(mapping.roleIds).toEqual(['qa']);
+    expect((await review(local, current.cookie, mapping.id)).statusCode).toBe(200);
+    const reviewed = (await state(local, current.cookie)).mappings.find(item => item.id === mapping.id)!;
+    const retry = await propose({ roleIds: ['qa'] });
+    expect(retry.statusCode).toBe(200);
+    expect(retry.json<Mapping>()).toEqual(reviewed);
+    const custom = await propose({ roleIds: ['qa', 'calibration'] });
+    expect(custom.statusCode).toBe(200);
+    expect(custom.json<Mapping>().roleIds).toEqual(['calibration', 'qa']);
+    expect(custom.json<Mapping>().id).not.toBe(mapping.id);
+    expect((await propose({ roleIds: ['calibration', 'qa'] })).json<Mapping>()).toEqual(custom.json<Mapping>());
+    expect((await state(local, current.cookie)).mappings).toHaveLength(current.state.mappings.length + 2);
+  });
+  it('rejects empty, unknown or repeated proposal routes without creating a mapping', async () => {
+    const current = await session(local);
+    const base = current.state.mappings.find(mapping => mapping.id === 'mapping-intel-ai-literacy')!;
+    for (const [roleIds, status] of [[[], 400], [['unknown-route'], 422], [['qa', 'qa'], 422]] as const) {
+      const result = await local.inject({ method: 'POST', url: '/api/mappings', headers: json(current.cookie), payload: { sourceId: base.sourceId, passage: base.passage, implication: base.implication, skillId: base.skillId, deltaModerate: base.deltaModerate, deltaFast: base.deltaFast, rationale: base.rationale, roleIds } });
+      expect(result.statusCode).toBe(status);
+    }
+    expect((await state(local, current.cookie)).mappings).toEqual(current.state.mappings);
+  });
+  it('rejects an explicitly invalid stored scope but preserves legacy mappings without a scope', async () => {
+    const current = await session(local);
+    const workspace = hash(current.cookie.split('=')[1]);
+    const id = 'mapping-intel-ai-literacy';
+    for (const roleIds of [[], ['unknown-route'], ['qa', 'qa']]) {
+      await store.mutate(workspace, state => { state.mappings.find(mapping => mapping.id === id)!.roleIds = roleIds; });
+      expect((await review(local, current.cookie, id)).statusCode).toBe(422);
+    }
+    await store.mutate(workspace, state => { delete state.mappings.find(mapping => mapping.id === id)!.roleIds; });
+    expect((await review(local, current.cookie, id)).statusCode).toBe(200);
+    const published = await local.inject({ method: 'POST', url: '/api/snapshots', headers: json(current.cookie), payload: { expectedActiveId: current.state.activeSnapshotId, mappingIds: [id], title: 'Legacy scope retained' } });
+    expect(published.statusCode).toBe(200);
+    expect(published.json<Snapshot>().mappings.find(mapping => mapping.id === id)?.roleIds).toBeUndefined();
+  });
   it('deduplicates the same paper across RSS and Atom while retaining mapping references and published state', async () => {
     const title = 'Synthetic transport fixture for industrial inspection';
     const excerpt = 'Transport test fixture only: industrial inspection and anomaly detection research.';

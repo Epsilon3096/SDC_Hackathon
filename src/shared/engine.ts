@@ -1,6 +1,6 @@
 import type { Assessment, Contribution, Mapping, Plan, Profile, Resource, Role, ScenarioId, SkillId, Snapshot } from './types';
 
-export const ENGINE_VERSION = '1.0.0';
+export const ENGINE_VERSION = '1.1.0';
 export const skillIds: SkillId[] = ['measurement', 'inspection', 'records', 'quality_data', 'ai_inspection', 'root_cause'];
 const skillLabels: Record<SkillId, string> = { measurement: 'measurement and tolerances', inspection: 'visual inspection', records: 'quality documentation', quality_data: 'quality-data analysis', ai_inspection: 'AI-inspection literacy', root_cause: 'root-cause reasoning' };
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -20,12 +20,14 @@ export function validateProfile(profile: Profile): void {
 function usableMapping(mapping: Mapping): boolean {
   return mapping.status === 'approved' && !mapping.fixture && !!mapping.sourceId.trim() && !!mapping.passage.trim()
     && !!mapping.implication.trim() && !!mapping.rationale.trim() && !!mapping.reviewedAt
+    && (mapping.roleIds === undefined || (Array.isArray(mapping.roleIds) && mapping.roleIds.length > 0 && mapping.roleIds.every(id => typeof id === 'string' && !!id.trim())))
     && Number.isFinite(mapping.deltaModerate) && Number.isFinite(mapping.deltaFast);
 }
 
-/** A similarity score never reaches this function. Only reviewed, published mappings do. */
-export function skillMultiplier(snapshot: Snapshot, skillId: SkillId, scenario: ScenarioId): { multiplier: number; rationale: string } {
-  const candidates = snapshot.mappings.filter(m => m.skillId === skillId && usableMapping(m));
+/** A similarity score never reaches this function. Scoring supplies roleId; omission is only for aggregate rule inspection. */
+export function skillMultiplier(snapshot: Snapshot, skillId: SkillId, scenario: ScenarioId, roleId?: string): { multiplier: number; rationale: string } {
+  // Unscoped historical rules keep their original all-route meaning. An explicit empty scope never means all routes.
+  const candidates = snapshot.mappings.filter(m => m.skillId === skillId && usableMapping(m) && (m.roleIds === undefined || roleId === undefined || m.roleIds.includes(roleId)));
   const delta = (m: Mapping) => scenario === 'fast' ? m.deltaFast : m.deltaModerate;
   const positive = candidates.some(m => delta(m) > 0);
   const negative = candidates.some(m => delta(m) < 0);
@@ -33,7 +35,7 @@ export function skillMultiplier(snapshot: Snapshot, skillId: SkillId, scenario: 
   const chosen = [...candidates].sort((a, b) => Math.abs(delta(b)) - Math.abs(delta(a)) || compareId(a.id, b.id))[0];
   if (!chosen || delta(chosen) === 0) return { multiplier: 1, rationale: 'Baseline modelling weight; no applicable approved adjustment.' };
   const multiplier = clamp(1 + delta(chosen), 0.5, 2);
-  return { multiplier, rationale: `Reviewed mapping ${chosen.id}: ${chosen.rationale} Multiplier ${round(multiplier)}×; strongest same-direction adjustment only. Scenario assumption, not a forecast.` };
+  return { multiplier, rationale: `Reviewed mapping ${chosen.id}: ${chosen.rationale} Multiplier ${round(multiplier)}×; strongest same-direction adjustment only. ${chosen.roleIds === undefined ? 'Legacy rule with no recorded role scope: applies to all routes.' : `Recorded role scope: ${chosen.roleIds.join(', ')}.`} Scenario assumption, not a forecast.` };
 }
 
 export function qualificationFor(profile: Profile, role: Role): Pick<Assessment, 'qualification' | 'qualificationReason'> {
@@ -57,7 +59,7 @@ export function assess(profile: Profile, snapshot: Snapshot, scenario: ScenarioI
       const required = role.required[skillId];
       const base = role.weights[skillId];
       if (!Number.isFinite(required) || required < 0 || required > 4 || !Number.isFinite(base) || base < 0) throw new Error(`Invalid requirement or weight for ${role.id}/${skillId}.`);
-      const { multiplier, rationale } = skillMultiplier(snapshot, skillId, scenario);
+      const { multiplier, rationale } = skillMultiplier(snapshot, skillId, scenario, role.id);
       const weight = required === 0 ? 0 : base * multiplier;
       const level = profile.skills[skillId];
       const coverage = required === 0 ? 1 : level === null ? null : clamp(level / required, 0, 1);
@@ -190,5 +192,5 @@ export function createPlan(profile: Profile, snapshot: Snapshot, scenario: Scena
   warnings.push('Finishing a step records activity only; it does not increase proficiency. This starter plan does not award a qualification. Optional certification and paid tools are outside the displayed learning budget.');
   const totalMinutes = steps.reduce((sum, step) => sum + step.minutes, 0);
   const id = `plan-${stableId(JSON.stringify({ engine: ENGINE_VERSION, profile, snapshot: snapshot.id, snapshotVersion: snapshot.version, scenario, roleId, steps }))}`;
-  return { id, profileId: profile.id, profileVersion: profile.version, snapshotId: snapshot.id, scenario, roleId, constraints: { weeklyHours: profile.weeklyHours, budget: profile.budget }, steps, totalMinutes, weeks: profile.weeklyHours > 0 ? Math.ceil(totalMinutes / (60 * profile.weeklyHours)) : 0, learningCost: round(learningCost), unknownCost, warnings, completed: [], createdAt: new Date().toISOString() };
+  return { id, profileId: profile.id, profileVersion: profile.version, snapshotId: snapshot.id, scenario, roleId, constraints: { weeklyHours: profile.weeklyHours, budget: profile.budget }, decision: { profile: structuredClone(profile), assessment: structuredClone(assessment), engineVersion: ENGINE_VERSION }, steps, totalMinutes, weeks: profile.weeklyHours > 0 ? Math.ceil(totalMinutes / (60 * profile.weeklyHours)) : 0, learningCost: round(learningCost), unknownCost, warnings, completed: [], createdAt: new Date().toISOString() };
 }
