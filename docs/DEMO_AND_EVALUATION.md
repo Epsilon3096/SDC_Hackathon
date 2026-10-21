@@ -16,6 +16,14 @@ Suggested timing: problem 40s; profile 40s; comparison 60s; evidence/publication
 
 For a second synthetic case, edit Farid's documentation level to 1 and quality-data level to 0, and save. The same engine changes the baseline sequence documentation → data → AI → root cause to AI → documentation → data → root cause after the reviewed Intel mapping is published. Keep the edits visible; this is a constructed demonstration, not an observed worker outcome. Aina's default QA alignment changes 65.33 to 61.59 under faster adoption, while her skill profile stays unchanged. These are deterministic model outputs, not measured social impact.
 
+## Optional correction and continuity demonstration
+
+After publishing a reviewed rule, open Evidence Studio and select the active rule for retirement. Enter a reason and publish the next snapshot. Its adjustment disappears from the current assessment, while the earlier snapshot and accepted plan remain unchanged. To replace a rule with a weaker interpretation, first create and approve the revised mapping, then publish it together with retirement of the old mapping. Do not add the weaker mapping alone: the model deliberately keeps the strongest duplicate adjustment among active rules.
+
+For schedule continuity, adopt a plan at four hours per week, then edit the profile to eight hours. The saved plan still shows the original four-hour pace until the new suggestion is adopted. Plans created before pace capture was implemented say that the original pace was not recorded; the app does not infer it from today's profile.
+
+Completion belongs to each saved plan. A new revision first carries valid completed steps from the same worker, role and scenario. Only the first plan in a scenario falls back to another plan for that worker and role. Prerequisite validation still applies.
+
 ## Small usability pilot protocol
 
 No planning-time improvement has been measured yet. The number 42 seconds is not a result.

@@ -113,6 +113,27 @@ export async function fetchArxiv(fetcher: typeof fetch = fetch) {
     return parseArxivRss(await boundedText(response, 1500000));
   }
 }
+/** Transport metadata can differ while the same versioned paper content is unchanged. */
+export function mergeSourceBatch(existing: Source[], incoming: Source[]) {
+  const version = (source: Source) => source.type === 'research' ? source.url.match(/^https:\/\/arxiv\.org\/abs\/(\d{2}(?:0[1-9]|1[0-2])\.\d{4,5}v[1-9]\d*)$/)?.[1] : undefined;
+  const sameContent = (left: Source, right: Source) => left.hash === right.hash || !!version(left)
+    && version(left) === version(right) && clean(left.title, 500) === clean(right.title, 500) && clean(left.excerpt, 5000) === clean(right.excerpt, 5000);
+  let created = 0; let enriched = 0;
+  for (const source of incoming) {
+    const known = existing.find(old => sameContent(old, source));
+    if (!known) { existing.push(source); created++; continue; }
+    if (!known.publishedAt && source.publishedAt) {
+      // Preserve the original record identity and text hash: mappings and inference
+      // provenance continue to refer to the same version and exact passage.
+      known.publishedAt = source.publishedAt;
+      known.datePrecision = source.datePrecision;
+      known.dateKind = source.dateKind;
+      known.limitation = source.limitation + ' First-submission date verified from the official arXiv Atom API at ' + source.retrievedAt + '. Earlier collection: ' + known.summary;
+      enriched++;
+    }
+  }
+  return { created, enriched };
+}
 export interface RunpodConfig { key?: string; endpoint?: string; revision?: string; }
 export function configured(config: RunpodConfig) { return !!(config.key && config.endpoint && /^[a-zA-Z0-9-]+$/.test(config.endpoint) && config.revision && /^[0-9a-f]{40}$/i.test(config.revision)); }
 export function cacheKey(source: Source, config: RunpodConfig) { return hash(source.hash + MODEL + config.revision + RELEVANCE_QUERY + PREPROCESSING); }

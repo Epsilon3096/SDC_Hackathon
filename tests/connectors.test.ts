@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ARXIV_URL, ARXIV_RSS_URL, MODEL, PREPROCESSING, RELEVANCE_QUERY, boundedText, cacheKey, configured, fetchArxiv, parseArxiv, parseArxivRss, pollInference, submitInference } from '../src/server/connectors';
+import { ARXIV_URL, ARXIV_RSS_URL, MODEL, PREPROCESSING, RELEVANCE_QUERY, boundedText, cacheKey, configured, fetchArxiv, mergeSourceBatch, parseArxiv, parseArxivRss, pollInference, submitInference } from '../src/server/connectors';
 import type { Inference } from '../src/shared/types';
 
 const retrievedAt = '2026-10-21T06:00:00.000Z';
@@ -97,6 +97,38 @@ describe('official daily RSS fallback', () => {
     const fake = vi.fn<typeof fetch>().mockRejectedValue(new Error('offline'));
     await expect(fetchArxiv(fake)).rejects.toThrow('offline');
     expect(fake).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('source identity across connector transports', () => {
+  const title = 'Industrial defect inspection research';
+  const summary = 'Research on industrial inspection and anomaly detection.';
+  const atomSource = () => parseArxiv(feed({ title, summary }), '2026-10-22T06:00:00.000Z')[0];
+  it('enriches RSS with an Atom date while preserving the record ID, exact text and inference hash', () => {
+    const existing = parseArxivRss(rssFeed(), retrievedAt);
+    const original = structuredClone(existing[0]);
+    const incoming = atomSource();
+    expect(incoming.hash).not.toBe(original.hash);
+    expect(mergeSourceBatch(existing, [incoming])).toEqual({ created: 0, enriched: 1 });
+    expect(existing).toHaveLength(1);
+    expect(existing[0]).toMatchObject({ id: original.id, hash: original.hash, excerpt: original.excerpt, retrievedAt: original.retrievedAt, publishedAt: '2021-06-15', datePrecision: 'day' });
+    expect(existing[0].limitation).toContain('2026-10-22T06:00:00.000Z');
+    expect(existing[0].limitation).toContain('Live RSS announcement: 2026-10-21');
+    expect(existing[0].limitation).not.toContain('those dates are unverified');
+    expect(mergeSourceBatch(existing, [incoming])).toEqual({ created: 0, enriched: 0 });
+  });
+  it('does not erase a verified Atom date when the same paper later comes from RSS', () => {
+    const existing = [atomSource()];
+    const original = structuredClone(existing[0]);
+    expect(mergeSourceBatch(existing, parseArxivRss(rssFeed(), retrievedAt))).toEqual({ created: 0, enriched: 0 });
+    expect(existing).toEqual([original]);
+  });
+  it('deduplicates a batch but retains genuinely changed versions or source content', () => {
+    const existing = [atomSource()];
+    const revised = parseArxiv(feed({ id: 'http://arxiv.org/abs/2106.08265v3', title, summary }))[0];
+    const corrected = parseArxiv(feed({ title, summary: summary + ' Corrected task description.' }))[0];
+    expect(mergeSourceBatch(existing, [revised, revised, corrected, corrected])).toEqual({ created: 2, enriched: 0 });
+    expect(existing).toHaveLength(3);
   });
 });
 

@@ -1,9 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { mkdir, mkdtemp } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { basename, dirname, join, resolve } from 'node:path';
+import { tmpdir } from 'node:os';
 import { buildApp } from '../src/server/app';
 import { hash, Store } from '../src/server/store';
-import type { AppState, Plan, Profile } from '../src/shared/types';
+import { skillMultiplier } from '../src/shared/engine';
+import type { AppState, Mapping, Plan, Profile, Snapshot } from '../src/shared/types';
 
 type App = Awaited<ReturnType<typeof buildApp>>;
 let store: Store;
@@ -30,6 +32,57 @@ beforeAll(async () => {
   locked = await buildApp({ store, adminToken: 'test-review-token-only' });
 }, 30000);
 afterAll(async () => { await local?.close(); await locked?.close(); await store?.close(); });
+
+describe('hosted HTTPS request boundary', () => {
+  it('accepts same-origin HTTPS writes behind the preview proxy and keeps secure first-party cookies', async () => {
+    const hosted = await buildApp({ store, production: true, demoReview: true });
+    const host = 'shiftbridge-test.replit.dev';
+    try {
+      const response = await hosted.inject({ method: 'GET', url: '/api/state', headers: { host, 'x-forwarded-proto': 'https', 'x-forwarded-for': '203.0.113.40' } });
+      expect(response.statusCode).toBe(200);
+      const session = response.cookies.find(c => c.name === 'shiftbridge_session')!;
+      expect(session).toMatchObject({ secure: true, httpOnly: true, sameSite: 'Strict' });
+      expect(response.headers['x-frame-options']).toBe('DENY');
+      expect(response.headers['content-security-policy']).toContain("frame-ancestors 'none'");
+      const headers = { host, origin: `https://${host}`, cookie: `${session.name}=${session.value}`, 'content-type': 'application/json', 'x-forwarded-proto': 'https', 'x-forwarded-for': '203.0.113.40' };
+      const original = response.json<AppState>().profiles[0];
+      const saved = await hosted.inject({ method: 'PUT', url: `/api/profiles/${original.id}`, headers, payload: { ...original, name: 'Hosted synthetic edit' } });
+      expect(saved.statusCode).toBe(200);
+      const adopted = await hosted.inject({ method: 'POST', url: '/api/plans', headers, payload: { profileId: original.id, roleId: 'qa', scenario: 'moderate' } });
+      expect(adopted.statusCode).toBe(200);
+      const recovered = await hosted.inject({ method: 'GET', url: '/api/state', headers });
+      expect(recovered.json<AppState>().profiles[0].name).toBe('Hosted synthetic edit');
+      expect(recovered.json<AppState>().plans).toHaveLength(1);
+      const crossOrigin = await hosted.inject({ method: 'POST', url: '/api/plans', headers: { ...headers, origin: 'https://other-app.replit.dev' }, payload: { profileId: original.id, roleId: 'qa', scenario: 'moderate' } });
+      expect(crossOrigin.statusCode).toBe(403);
+    } finally { await hosted.close(); }
+  });
+
+  it('uses HTTPS mode for REPL_ID preview startup even when NODE_ENV is development', async () => {
+    const signals = ['SIGINT', 'SIGTERM'] as const;
+    const oldListeners = new Map(signals.map(signal => [signal, process.listeners(signal)]));
+    const fakeApp = { listen: vi.fn().mockResolvedValue('http://0.0.0.0:3001'), close: vi.fn() };
+    const fakeStore = { kind: 'postgres', close: vi.fn() };
+    const build = vi.fn().mockResolvedValue(fakeApp);
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.stubEnv('REPL_ID', 'synthetic-preview-id');
+    vi.stubEnv('REPLIT_DEPLOYMENT', '');
+    vi.stubEnv('DATABASE_URL', 'postgresql://synthetic-test-only.invalid/not-connected');
+    vi.stubEnv('HOST', '');
+    vi.doMock('../src/server/store', () => ({ Store: { open: vi.fn().mockResolvedValue(fakeStore) } }));
+    vi.doMock('../src/server/app', () => ({ buildApp: build }));
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      await import('../src/server/index');
+      expect(build).toHaveBeenCalledWith(expect.objectContaining({ production: true, localReviewer: false }));
+      expect(fakeApp.listen).toHaveBeenCalledWith(expect.objectContaining({ host: '0.0.0.0' }));
+    } finally {
+      for (const signal of signals) for (const listener of process.listeners(signal)) if (!oldListeners.get(signal)!.includes(listener)) process.removeListener(signal, listener);
+      log.mockRestore(); vi.unstubAllEnvs();
+      vi.doUnmock('../src/server/store'); vi.doUnmock('../src/server/app');
+    }
+  });
+});
 
 describe('profile persistence, isolation and optimistic writes', () => {
   it('round-trips the fractional seeded skills, retains changes and rejects stale versions', async () => {
@@ -60,20 +113,25 @@ describe('profile persistence, isolation and optimistic writes', () => {
     expect((await store.read(id)).state.activeSnapshotId).toBe(before.state.activeSnapshotId);
   });
   it('persists data after the embedded database closes and reopens from disk', async () => {
-    const root = resolve(import.meta.dirname, '../../../work/backend-test-data');
-    await mkdir(root, { recursive: true });
-    const directory = await mkdtemp(resolve(root, 'persistence-'));
-    const first = await Store.open(undefined, directory);
+    const temporaryRoot = resolve(tmpdir());
+    const directory = await mkdtemp(join(temporaryRoot, 'shiftbridge-persistence-'));
     try {
-      await first.mutate('durable-test', s => { s.profiles[0].name = 'Persisted synthetic worker'; s.profiles[0].version = 7; });
-      await first.setAdmin('durable-test', 123456789);
-    } finally { await first.close(); }
-    const reopened = await Store.open(undefined, directory);
-    try {
-      const recovered = await reopened.read('durable-test');
-      expect(recovered.state.profiles[0]).toMatchObject({ name: 'Persisted synthetic worker', version: 7 });
-      expect(recovered.adminUntil).toBe(123456789);
-    } finally { await reopened.close(); }
+      const first = await Store.open(undefined, directory);
+      try {
+        await first.mutate('durable-test', s => { s.profiles[0].name = 'Persisted synthetic worker'; s.profiles[0].version = 7; });
+        await first.setAdmin('durable-test', 123456789);
+      } finally { await first.close(); }
+      const reopened = await Store.open(undefined, directory);
+      try {
+        const recovered = await reopened.read('durable-test');
+        expect(recovered.state.profiles[0]).toMatchObject({ name: 'Persisted synthetic worker', version: 7 });
+        expect(recovered.adminUntil).toBe(123456789);
+      } finally { await reopened.close(); }
+    } finally {
+      const target = resolve(directory);
+      if (dirname(target) !== temporaryRoot || !basename(target).startsWith('shiftbridge-persistence-')) throw new Error('Unexpected persistence-test path; refusing cleanup.');
+      await rm(target, { recursive: true, force: true });
+    }
   });
 });
 
@@ -96,6 +154,39 @@ describe('saved plans and prerequisite progress', () => {
     expect(response.statusCode).toBe(200);
     return response.json<{ id: string }>();
   }
+  it('rejects adoption after another tab changes the reviewed profile and preserves saved plans', async () => {
+    const current = await session(local);
+    const profile = current.state.profiles.find(p => p.id === 'aina')!;
+    const selection = { profileId: profile.id, scenario: 'moderate', roleId: 'qa', snapshotId: current.state.activeSnapshotId, expectedProfileVersion: profile.version };
+    const original = await local.inject({ method: 'POST', url: '/api/plans', headers: json(current.cookie), payload: selection });
+    expect(original.statusCode).toBe(200);
+    expect(original.json<Plan>().profileVersion).toBe(profile.version);
+    const edit = await local.inject({ method: 'PUT', url: `/api/profiles/${profile.id}`, headers: json(current.cookie), payload: { ...profile, weeklyHours: profile.weeklyHours + 1 } });
+    expect(edit.statusCode).toBe(200);
+    const beforeRejectedAdoption = await state(local, current.cookie);
+    const stale = await local.inject({ method: 'POST', url: '/api/plans', headers: json(current.cookie), payload: selection });
+    expect(stale.statusCode).toBe(409);
+    expect(stale.json().error).toContain('profile changed');
+    const unchanged = await state(local, current.cookie);
+    expect(unchanged.plans).toEqual(beforeRejectedAdoption.plans);
+    expect(unchanged.audit).toEqual(beforeRejectedAdoption.audit);
+    const refreshed = await local.inject({ method: 'POST', url: '/api/plans', headers: json(current.cookie), payload: { ...selection, expectedProfileVersion: edit.json<Profile>().version } });
+    expect(refreshed.statusCode).toBe(200);
+    expect(refreshed.json<Plan>().profileVersion).toBe(edit.json<Profile>().version);
+    // A stale request must also fail when an equivalent current plan already exists.
+    const savedPlans = (await state(local, current.cookie)).plans;
+    const staleRepeat = await local.inject({ method: 'POST', url: '/api/plans', headers: json(current.cookie), payload: selection });
+    expect(staleRepeat.statusCode).toBe(409);
+    expect((await state(local, current.cookie)).plans).toEqual(savedPlans);
+  });
+  it('requires a positive integer when an expected profile version is supplied', async () => {
+    const current = await session(local);
+    for (const expectedProfileVersion of [0, -1, 1.5, '1']) {
+      const response = await local.inject({ method: 'POST', url: '/api/plans', headers: json(current.cookie), payload: { profileId: 'aina', roleId: 'qa', expectedProfileVersion } });
+      expect(response.statusCode).toBe(400);
+    }
+    expect((await state(local, current.cookie)).plans).toEqual([]);
+  });
   it('preserves valid completion when adopting a new snapshot and keeps repeat adoption idempotent', async () => {
     const current = await session(local);
     const original = await adopt(current.cookie);
@@ -123,6 +214,27 @@ describe('saved plans and prerequisite progress', () => {
     expect(differentProfile.steps.some(step => original.steps.some(old => old.resourceId === step.resourceId))).toBe(true);
     expect(differentRole.completed).toEqual([]);
     expect(differentProfile.completed).toEqual([]);
+  });
+  it('prefers completion from the same scenario branch when adopting revised evidence', async () => {
+    const current = await session(local);
+    const moderate = await adopt(current.cookie);
+    await complete(current.cookie, moderate);
+    const fast = await adopt(current.cookie, { profileId: 'aina', scenario: 'fast', roleId: 'qa' });
+    expect(fast.completed.length).toBeGreaterThan(0);
+    // A new branch initially inherits route progress, then its own edits stay local.
+    for (const step of fast.steps) {
+      const response = await local.inject({ method: 'PATCH', url: `/api/plans/${fast.id}/progress`, headers: json(current.cookie), payload: { resourceId: step.resourceId, completed: false } });
+      expect(response.statusCode).toBe(200);
+    }
+    const originalBranches = (await state(local, current.cookie)).plans;
+    await publishNext(current.cookie);
+    const revisedModerate = await adopt(current.cookie);
+    const revisedFast = await adopt(current.cookie, { profileId: 'aina', scenario: 'fast', roleId: 'qa' });
+    expect(revisedModerate.completed.length).toBeGreaterThan(0);
+    expect(revisedFast.completed).toEqual([]);
+    const after = await state(local, current.cookie);
+    expect(after.plans.find(p => p.id === moderate.id)).toEqual(originalBranches.find(p => p.id === moderate.id));
+    expect(after.plans.find(p => p.id === fast.id)).toEqual(originalBranches.find(p => p.id === fast.id));
   });
   it('drops stale and transitively invalid completion when a prerequisite is absent', async () => {
     const current = await session(local);
@@ -165,6 +277,98 @@ describe('saved plans and prerequisite progress', () => {
 });
 
 describe('review and publication boundaries', () => {
+  it('deduplicates the same paper across RSS and Atom while retaining mapping references and published state', async () => {
+    const title = 'Synthetic transport fixture for industrial inspection';
+    const excerpt = 'Transport test fixture only: industrial inspection and anomaly detection research.';
+    const atom = `<feed xmlns="http://www.w3.org/2005/Atom"><entry><id>https://arxiv.org/abs/2610.12345v1</id><title>${title}</title><summary>${excerpt}</summary><published>2026-10-20T10:00:00Z</published><updated>2026-10-20T10:00:00Z</updated></entry></feed>`;
+    const rss = `<rss version="2.0" xmlns:arxiv="http://arxiv.org/schemas/atom"><channel><link>http://rss.arxiv.org/rss/cs.CV</link><item><title>${title}</title><link>https://arxiv.org/abs/2610.12345</link><description>arXiv:2610.12345v1 Announce Type: new Abstract: ${excerpt}</description><pubDate>Wed, 21 Oct 2026 00:00:00 -0400</pubDate><arxiv:announce_type>new</arxiv:announce_type></item></channel></rss>`;
+    const fake = vi.fn<typeof fetch>().mockRejectedValueOnce(new Error('Atom unavailable')).mockResolvedValueOnce(new Response(rss)).mockResolvedValueOnce(new Response(atom));
+    const app = await buildApp({ store, localReviewer: true, fetcher: fake });
+    try {
+      const current = await session(app);
+      const first = await app.inject({ method: 'POST', url: '/api/ingest', headers: json(current.cookie), payload: {} });
+      expect(first.statusCode).toBe(200);
+      expect(first.json()).toMatchObject({ created: 1, enriched: 0 });
+      const recorded = (await state(app, current.cookie)).sources.find(s => s.url === 'https://arxiv.org/abs/2610.12345v1')!;
+      expect(recorded.publishedAt).toBeNull();
+      const mapping = await app.inject({ method: 'POST', url: '/api/mappings', headers: json(current.cookie), payload: { sourceId: recorded.id, passage: recorded.excerpt, implication: 'A reviewer-authored test interpretation of an inspection task.', skillId: 'ai_inspection', deltaModerate: 0.1, deltaFast: 0.2, rationale: 'This fixture checks stable references; it is not production evidence.' } });
+      expect(mapping.statusCode).toBe(200);
+      const beforeEnrichment = await state(app, current.cookie);
+      const now = Date.now(); const clock = vi.spyOn(Date, 'now').mockReturnValue(now + 31001);
+      try {
+        const second = await app.inject({ method: 'POST', url: '/api/ingest', headers: json(current.cookie), payload: {} });
+        expect(second.statusCode).toBe(200);
+        expect(second.json()).toMatchObject({ created: 0, enriched: 1 });
+      } finally { clock.mockRestore(); }
+      const after = await state(app, current.cookie);
+      const papers = after.sources.filter(s => s.url === recorded.url);
+      expect(papers).toHaveLength(1);
+      expect(papers[0]).toMatchObject({ id: recorded.id, hash: recorded.hash, excerpt: recorded.excerpt, publishedAt: '2026-10-20' });
+      expect(after.mappings).toEqual(beforeEnrichment.mappings);
+      expect(after.snapshots).toEqual(beforeEnrichment.snapshots);
+      expect(after.plans).toEqual(beforeEnrichment.plans);
+      expect(after.activeSnapshotId).toBe(beforeEnrichment.activeSnapshotId);
+    } finally { await app.close(); }
+  });
+  it('replaces or withdraws a published interpretation without changing historical evidence or saved plans', async () => {
+    const current = await session(local);
+    const base = current.state.mappings.find(m => m.id === 'mapping-intel-ai-literacy')!;
+    const propose = async (delta: number) => {
+      const response = await local.inject({ method: 'POST', url: '/api/mappings', headers: json(current.cookie), payload: { sourceId: base.sourceId, passage: base.passage, implication: base.implication, skillId: base.skillId, deltaModerate: delta, deltaFast: delta, rationale: 'A bounded inspection scenario assumption requiring human review.' } });
+      expect(response.statusCode).toBe(200);
+      return response.json<Mapping>();
+    };
+    const publish = async (payload: object) => {
+      const response = await local.inject({ method: 'POST', url: '/api/snapshots', headers: json(current.cookie), payload: { expectedActiveId: (await state(local, current.cookie)).activeSnapshotId, title: 'Reviewed interpretation update', ...payload } });
+      expect(response.statusCode).toBe(200);
+      return response.json<Snapshot>();
+    };
+    const original = await propose(0.25);
+    expect((await review(local, current.cookie, original.id)).statusCode).toBe(200);
+    const oldSnapshot = await publish({ mappingIds: [original.id] });
+    expect(skillMultiplier(oldSnapshot, 'ai_inspection', 'moderate').multiplier).toBe(1.25);
+    const plan = await local.inject({ method: 'POST', url: '/api/plans', headers: json(current.cookie), payload: { profileId: 'aina', roleId: 'qa', scenario: 'moderate' } });
+    expect(plan.statusCode).toBe(200);
+    const correction = await propose(0.10);
+    expect((await review(local, current.cookie, correction.id)).statusCode).toBe(200);
+    const reason = 'Closer review supports a smaller adjustment than the earlier interpretation.';
+    const replacement = await publish({ mappingIds: [correction.id], retireMappingIds: [original.id], retirementNote: reason });
+    expect(replacement).toMatchObject({ retiredMappingIds: [original.id], retirementNote: reason });
+    expect(replacement.mappings.map(m => m.id)).not.toContain(original.id);
+    expect(skillMultiplier(replacement, 'ai_inspection', 'moderate').multiplier).toBe(1.1);
+    const withdrawn = await publish({ retireMappingIds: [correction.id], retirementNote: 'Withdraw this assumption until better evidence is available.' });
+    expect(withdrawn.mappings).toEqual(current.state.snapshots[0].mappings);
+    expect(skillMultiplier(withdrawn, 'ai_inspection', 'moderate').multiplier).toBe(1);
+    const after = await state(local, current.cookie);
+    expect(after.snapshots.find(s => s.id === oldSnapshot.id)).toEqual(oldSnapshot);
+    expect(after.snapshots.find(s => s.id === replacement.id)).toEqual(replacement);
+    expect(after.plans).toEqual([plan.json()]);
+    expect(after.audit.find(a => a.action === 'snapshot.published' && a.detail.includes(replacement.id))?.detail).toContain(reason);
+  });
+  it('rejects invalid retirement requests and empty publications without changing active evidence', async () => {
+    const current = await session(local);
+    const id = 'mapping-intel-ai-literacy';
+    expect((await review(local, current.cookie, id)).statusCode).toBe(200);
+    const published = await local.inject({ method: 'POST', url: '/api/snapshots', headers: json(current.cookie), payload: { expectedActiveId: current.state.activeSnapshotId, mappingIds: [id], title: 'Initial publication' } });
+    expect(published.statusCode).toBe(200);
+    const before = await state(local, current.cookie);
+    const attempts = [
+      { retireMappingIds: [id] },
+      { retireMappingIds: [id], retirementNote: 'Too short' },
+      { retireMappingIds: ['mapping-unrelated-chatbot'], retirementNote: 'This mapping was never part of the active snapshot.' },
+      { mappingIds: [id], retireMappingIds: [id], retirementNote: 'The same mapping cannot be added and removed together.' },
+    ];
+    for (const input of attempts) {
+      const result = await local.inject({ method: 'POST', url: '/api/snapshots', headers: json(current.cookie), payload: { expectedActiveId: before.activeSnapshotId, title: 'Invalid retirement', ...input } });
+      expect(result.statusCode).toBe(422);
+    }
+    const empty = await local.inject({ method: 'POST', url: '/api/snapshots', headers: json(current.cookie), payload: { expectedActiveId: before.activeSnapshotId, title: 'Empty publication' } });
+    expect(empty.statusCode).toBe(409);
+    const after = await state(local, current.cookie);
+    expect(after.snapshots).toEqual(before.snapshots);
+    expect(after.activeSnapshotId).toBe(before.activeSnapshotId);
+    expect(after.audit).toEqual(before.audit);
+  });
   it('persists new live-source metadata once without publishing or changing a saved plan', async () => {
     const xml = '<feed xmlns="http://www.w3.org/2005/Atom"><entry><id>https://arxiv.org/abs/2610.12345v1</id><title>Synthetic transport fixture for inspection research</title><summary>Transport test fixture only: industrial inspection abstract for parser coverage.</summary><published>2026-10-20T10:00:00Z</published><updated>2026-10-20T10:00:00Z</updated></entry></feed>';
     const fake = vi.fn<typeof fetch>().mockImplementation(async () => new Response(xml));

@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { assess, createPlan } from '../shared/engine';
 import type { AppState, Evaluation, Mapping, Profile, ScenarioId, Snapshot } from '../shared/types';
 import { Store, audit, hash, type StoredState } from './store';
-import { configured, fetchArxiv, submitInference, pollInference, cacheKey, type RunpodConfig } from './connectors';
+import { configured, fetchArxiv, mergeSourceBatch, submitInference, pollInference, cacheKey, type RunpodConfig } from './connectors';
 
 class HttpError extends Error { constructor(public statusCode: number, message: string) { super(message); } }
 const fail = (status: number, message: string): never => { throw new HttpError(status, message); };
@@ -18,6 +18,7 @@ const skillEnum = z.enum(['measurement', 'inspection', 'records', 'quality_data'
 const level = z.number().min(0).max(4).multipleOf(0.5).nullable();
 const profileSchema = z.object({ name: z.string().trim().min(1).max(60), qualification: z.enum(['academic_diploma', 'dkm4', 'dlkm5', 'skm3', 'skm2', 'spm', 'unknown']), field: z.string().trim().max(100), experienceYears: z.number().min(0).max(60), weeklyHours: z.number().min(0).max(40), budget: z.number().min(0).max(10000), skills: z.object({ measurement: level, inspection: level, records: level, quality_data: level, ai_inspection: level, root_cause: level }), version: z.number().int().positive() });
 const selectionSchema = z.object({ profileId: idSchema, scenario: z.enum(['moderate', 'fast']).default('moderate'), roleId: idSchema.default('qa'), snapshotId: idSchema.optional() });
+const adoptionSchema = selectionSchema.extend({ expectedProfileVersion: z.number().int().positive().optional() });
 export interface AppOptions { store: Store; localReviewer?: boolean; demoReview?: boolean; adminToken?: string; production?: boolean; publicOrigin?: string; runpod?: RunpodConfig; staticDir?: string; fetcher?: typeof fetch; }
 
 export async function buildApp(options: AppOptions) {
@@ -90,12 +91,15 @@ export async function buildApp(options: AppOptions) {
     });
   });
   app.post('/api/plans', async req => store.mutate(wid(req), state => {
-    const input = select(state, req.body);
+    const requested = adoptionSchema.parse(req.body);
+    const input = select(state, requested);
+    if (requested.expectedProfileVersion !== undefined && requested.expectedProfileVersion !== input.profile.version) fail(409, 'This profile changed after the plan was reviewed. Reload and inspect the updated plan before adopting it.');
     const existing = state.plans.find(p => p.profileId === input.profileId && p.profileVersion === input.profile.version && p.snapshotId === input.snapshot.id && p.scenario === input.scenario && p.roleId === input.roleId);
     if (existing) return existing;
     const plan = { ...createPlan(input.profile, input.snapshot, input.scenario, input.roleId, state.roles, state.resources), id: randomUUID(), createdAt: new Date().toISOString(), completed: [] as string[] };
     if (plan.steps.length === 0) fail(422, 'No feasible learning steps are available. Review your constraints first.');
-    const previous = state.plans.find(p => p.profileId === input.profileId && p.roleId === input.roleId);
+    const previous = state.plans.find(p => p.profileId === input.profileId && p.roleId === input.roleId && p.scenario === input.scenario)
+      || state.plans.find(p => p.profileId === input.profileId && p.roleId === input.roleId);
     if (previous) {
       // Resource IDs refer to this immutable starter catalogue. Carry completion
       // only within the same worker/route and only while prerequisites still hold.
@@ -146,35 +150,39 @@ export async function buildApp(options: AppOptions) {
     await requireAdmin(req); const input = z.object({ decision: z.enum(['approved', 'rejected']), note: z.string().trim().min(12).max(1200) }).parse(req.body);
     return store.mutate(wid(req), state => {
       const mapping = state.mappings.find(m => m.id === req.params.id) || fail(404, 'Mapping not found.');
-      if (state.snapshots.some(s => s.mappings.some(m => m.id === mapping.id))) fail(409, 'Published mappings are immutable. Propose a new reviewed revision instead.');
+      if (state.snapshots.some(s => s.mappings.some(m => m.id === mapping.id))) fail(409, 'Published mappings are immutable. Retire or replace them in a new snapshot.');
       if (input.decision === 'approved' && mapping.fixture) fail(422, 'This demonstration fixture has insufficient support and cannot be published. Reject it and record why.');
       if (input.decision === 'approved') validateMapping(state, mapping);
       mapping.status = input.decision; mapping.reviewNote = input.note; mapping.reviewedAt = new Date().toISOString(); audit(state, 'mapping.' + input.decision, mapping.id + ' · ' + input.note); return mapping;
     });
   });
   app.post('/api/snapshots', async req => {
-    await requireAdmin(req); const input = z.object({ expectedActiveId: idSchema, mappingIds: z.array(idSchema).min(1).max(50), title: z.string().trim().min(1).max(80) }).parse(req.body);
+    await requireAdmin(req); const input = z.object({ expectedActiveId: idSchema, mappingIds: z.array(idSchema).max(50).default([]), retireMappingIds: z.array(idSchema).max(50).default([]), retirementNote: z.string().trim().max(1200).optional(), title: z.string().trim().min(1).max(80) }).parse(req.body);
     return store.mutate(wid(req), state => {
       if (state.activeSnapshotId !== input.expectedActiveId) fail(409, 'The active snapshot changed. Reload and inspect the difference before publishing.');
       if (state.snapshots.length >= 50) fail(422, 'This demonstration workspace has reached its snapshot limit.');
       const parent = state.snapshots.find(s => s.id === state.activeSnapshotId)!;
+      const retired = [...new Set(input.retireMappingIds)];
+      if (retired.length && (!input.retirementNote || input.retirementNote.length < 12)) fail(422, 'Record a retirement reason of at least 12 characters.');
+      if (retired.some(id => !parent.mappings.some(mapping => mapping.id === id))) fail(422, 'Only mappings in the active snapshot may be retired.');
+      if (retired.some(id => input.mappingIds.includes(id))) fail(422, 'A mapping cannot be added and retired in the same publication.');
       const selected = [...new Set(input.mappingIds)].map(id => state.mappings.find(m => m.id === id) || fail(404, 'Mapping not found.'));
       if (selected.some(m => m.status !== 'approved' || m.fixture)) fail(422, 'Only approved, supported mappings may be published.');
       for (const mapping of selected) validateMapping(state, mapping);
       const additions = selected.filter(m => !parent.mappings.some(old => old.id === m.id));
-      if (!additions.length) fail(409, 'These mappings are already in the active snapshot.');
-      const snapshot: Snapshot = { id: 'snapshot-' + (parent.version + 1) + '-' + randomUUID().slice(0, 8), parentId: parent.id, title: input.title, version: parent.version + 1, publishedAt: new Date().toISOString(), mappings: structuredClone([...parent.mappings, ...additions]) };
-      state.snapshots.push(snapshot); state.activeSnapshotId = snapshot.id; audit(state, 'snapshot.published', snapshot.id + ' · ' + additions.length + ' reviewed mapping(s)'); return snapshot;
+      if (!additions.length && !retired.length) fail(409, 'The publication needs at least one new mapping or an active mapping to retire.');
+      const snapshot: Snapshot = { id: 'snapshot-' + (parent.version + 1) + '-' + randomUUID().slice(0, 8), parentId: parent.id, title: input.title, version: parent.version + 1, publishedAt: new Date().toISOString(), mappings: structuredClone([...parent.mappings.filter(mapping => !retired.includes(mapping.id)), ...additions]), ...(retired.length ? { retiredMappingIds: retired, retirementNote: input.retirementNote! } : {}) };
+      state.snapshots.push(snapshot); state.activeSnapshotId = snapshot.id; audit(state, 'snapshot.published', snapshot.id + ' · ' + additions.length + ' reviewed mapping(s)' + (retired.length ? ' · ' + retired.length + ' retired: ' + input.retirementNote : '')); return snapshot;
     });
   });
   app.post('/api/ingest', async req => {
     await requireAdmin(req); cooldown(wid(req) + ':ingest', 30000);
     let incoming; try { incoming = await fetchArxiv(options.fetcher); } catch { fail(503, 'The live arXiv feed could not be retrieved. Existing evidence and plans are unchanged. Retry later.'); }
     return store.mutate(wid(req), state => {
-      const fresh = incoming!.filter(source => !state.sources.some(old => old.hash === source.hash));
-      if (state.sources.length + fresh.length > 200) fail(422, 'This demonstration workspace has reached its source limit.');
-      state.sources.push(...fresh); audit(state, 'source.refreshed', fresh.length + ' new article version(s); no mappings automatically approved');
-      return { created: fresh.length, message: fresh.length ? 'New research saved for review. Recommendations have not changed.' : 'No new article versions found. Recommendations are unchanged.' };
+      const result = mergeSourceBatch(state.sources, incoming!);
+      if (state.sources.length > 200) fail(422, 'This demonstration workspace has reached its source limit.');
+      audit(state, 'source.refreshed', result.created + ' new article version(s); ' + result.enriched + ' existing source date(s) verified; no mappings automatically approved');
+      return { ...result, message: result.created ? 'New research saved for review. Recommendations have not changed.' : result.enriched ? 'No new article versions found. Existing source dates were verified; recommendations are unchanged.' : 'No new article versions found. Recommendations are unchanged.' };
     });
   });
   app.post<{ Params: { sourceId: string } }>('/api/inference/:sourceId', async req => {

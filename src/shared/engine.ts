@@ -66,8 +66,9 @@ export function assess(profile: Profile, snapshot: Snapshot, scenario: ScenarioI
     const denominator = contributions.reduce((sum, c) => sum + c.weight, 0);
     const knownWeight = contributions.reduce((sum, c) => sum + (c.coverage === null ? 0 : c.weight), 0);
     const knownPoints = contributions.reduce((sum, c) => sum + c.weight * (c.coverage ?? 0), 0);
-    const lowerScore = denominator > 0 ? 100 * knownPoints / denominator : 0;
-    const upperScore = denominator > 0 ? 100 * (knownPoints + denominator - knownWeight) / denominator : 0;
+    const possiblePoints = contributions.reduce((sum, c) => sum + c.weight * (c.coverage ?? 1), 0);
+    const lowerScore = denominator > 0 ? clamp(100 * knownPoints / denominator, 0, 100) : 0;
+    const upperScore = denominator > 0 ? clamp(100 * possiblePoints / denominator, lowerScore, 100) : 0;
     const complete = contributions.every(c => c.weight === 0 || c.coverage !== null);
     contributions.forEach(c => { c.points = denominator > 0 && c.coverage !== null ? 100 * c.weight * c.coverage / denominator : null; });
     return {
@@ -189,5 +190,5 @@ export function createPlan(profile: Profile, snapshot: Snapshot, scenario: Scena
   warnings.push('Finishing a step records activity only; it does not increase proficiency. This starter plan does not award a qualification. Optional certification and paid tools are outside the displayed learning budget.');
   const totalMinutes = steps.reduce((sum, step) => sum + step.minutes, 0);
   const id = `plan-${stableId(JSON.stringify({ engine: ENGINE_VERSION, profile, snapshot: snapshot.id, snapshotVersion: snapshot.version, scenario, roleId, steps }))}`;
-  return { id, profileId: profile.id, profileVersion: profile.version, snapshotId: snapshot.id, scenario, roleId, steps, totalMinutes, weeks: profile.weeklyHours > 0 ? Math.ceil(totalMinutes / (60 * profile.weeklyHours)) : 0, learningCost: round(learningCost), unknownCost, warnings, completed: [], createdAt: new Date().toISOString() };
+  return { id, profileId: profile.id, profileVersion: profile.version, snapshotId: snapshot.id, scenario, roleId, constraints: { weeklyHours: profile.weeklyHours, budget: profile.budget }, steps, totalMinutes, weeks: profile.weeklyHours > 0 ? Math.ceil(totalMinutes / (60 * profile.weeklyHours)) : 0, learningCost: round(learningCost), unknownCost, warnings, completed: [], createdAt: new Date().toISOString() };
 }

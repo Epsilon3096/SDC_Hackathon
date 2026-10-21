@@ -6,7 +6,7 @@ The HTML produced during ideation is a separate design reference. This directory
 
 ## Start locally
 
-Requires Node.js 24 and npm. Run `npm ci`, then `npm run dev`, and open `http://127.0.0.1:5173`.
+Requires Node.js 22.12+ or 24 and npm. Local verification uses Node 24; the Replit workspace uses Node 22.22. Run `npm ci`, then `npm run dev`, and open `http://127.0.0.1:5173`.
 
 No key or external database is required locally. PGlite runs embedded PostgreSQL and saves data under `.data/postgres`. Each browser receives its own synthetic workspace. Reloading preserves profiles, evidence decisions and learning plans. A local reviewer mode is enabled only on a loopback host outside Replit/production.
 
@@ -19,12 +19,16 @@ No key or external database is required locally. PGlite runs embedded PostgreSQL
 - Unknown qualification requirements remain unknown. A current-role development route is not a promise of eligibility for another job.
 - Actual dated baseline sources; human interpretations and numerical scenario rules are labelled modelling assumptions.
 - Evidence approval and publication are separate. Rejecting weak evidence does not revert published snapshots. Saved plans change only when the worker adopts a new one.
+- A new snapshot can explicitly retire an active evidence rule with a reason, optionally replacing it with an approved revision. Earlier snapshots and accepted plans retain their original evidence.
+- Saved plans retain the weekly hours and budget used when adopted. Completion carries forward within the same worker, route and scenario; changing one scenario's progress does not rewrite another saved branch.
 - Learning blocks combine public resources and team-authored practice estimates. Completing a step does not award a qualification or increase proficiency automatically.
 - No measured employment, wage, emissions or planning-time result is claimed.
 - Real arXiv refresh may fail; the previous reviewed state remains available. Research is not deployment evidence.
 - RunPod is optional in this build and currently deferred. Its absence is visible. No simulated GPU score is presented as a live result.
 
 ## Replit
+
+Development and testing currently continue locally. Replit setup and publishing are on hold at the participant's request; the workspace contains an earlier working version. Upload and verification of the final source will follow later. Keeping source in Replit is not, by itself, a verified interpretation of the competition's proof-of-use requirement.
 
 See `docs/DEPLOYMENT.md`. Hosted environments require a real PostgreSQL `DATABASE_URL`; the app deliberately refuses ephemeral disk-only hosting. The Replit commands enable isolated demonstration review for judges. Configure an `ADMIN_TOKEN` for controlled review or future paid inference; demo mode never authorises paid inference. Never commit keys, database URLs, voucher codes or runtime data.
 

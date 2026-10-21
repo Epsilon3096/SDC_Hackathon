@@ -3,7 +3,8 @@ import { resolve } from 'node:path';
 import { Store } from './store';
 import { buildApp } from './app';
 
-const production = process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
+// Replit's editor preview also terminates HTTPS at its proxy, even when NODE_ENV is development.
+const production = process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT || !!process.env.REPL_ID;
 const hosted = production || !!process.env.REPL_ID;
 if (hosted && !process.env.DATABASE_URL) throw new Error('Hosted deployment requires DATABASE_URL. Embedded storage is for local development only.');
 const host = process.env.HOST || (hosted ? '0.0.0.0' : '127.0.0.1');

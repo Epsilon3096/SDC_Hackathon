@@ -1,6 +1,9 @@
 run = "npm run replit"
 entrypoint = "src/server/index.ts"
-modules = ["nodejs-24"]
+modules = ["nodejs-22"]
+
+[nix]
+channel = "stable-24_11"
 
 [deployment]
 run = ["sh", "-c", "NODE_ENV=production HOST=0.0.0.0 DEMO_REVIEW=true npm start"]

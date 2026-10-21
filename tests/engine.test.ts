@@ -42,6 +42,46 @@ describe('deterministic six-skill assessment', () => {
     expect(score(profile)).toMatchObject({ score: null, lowerScore: 0, upperScore: 100, completeness: 0 });
   });
 
+  it('returns identical known bounds at the half-cent rounding boundary', () => {
+    const profile = aina();
+    profile.skills = { measurement: 2.5, inspection: 3.5, records: 3.5, quality_data: 3.5, ai_inspection: 3, root_cause: 4 };
+    const result = assess(profile, initialSnapshot, 'moderate', [roles.find(r => r.id === 'calibration')!])[0];
+    expect(result).toMatchObject({ score: 86.88, lowerScore: 86.88, upperScore: 86.88, completeness: 100 });
+  });
+
+  it('keeps a partial-profile interval ordered and contains every resolved value of the unknown skill', () => {
+    const profile = aina();
+    profile.skills = { measurement: 2.5, inspection: 3.5, records: 3.5, quality_data: 3.5, ai_inspection: null, root_cause: 4 };
+    const role = roles.find(r => r.id === 'calibration')!;
+    for (const scenario of ['moderate', 'fast'] as const) {
+      const snapshot = withMappings(approved());
+      const range = assess(profile, snapshot, scenario, [role])[0];
+      expect(range.score).toBeNull();
+      expect(range.lowerScore).toBeLessThanOrEqual(range.upperScore);
+      expect(range.lowerScore).toBeGreaterThanOrEqual(0);
+      expect(range.upperScore).toBeLessThanOrEqual(100);
+      for (let level = 0; level <= 4; level += 0.5) {
+        const resolved = copy(profile); resolved.skills.ai_inspection = level;
+        const point = assess(resolved, snapshot, scenario, [role])[0];
+        expect(point.lowerScore).toBe(point.upperScore);
+        expect(point.score).toBeGreaterThanOrEqual(range.lowerScore);
+        expect(point.score).toBeLessThanOrEqual(range.upperScore);
+      }
+    }
+  });
+
+  it('includes the fully resolved upper endpoint when several unknown skills land on a rounding boundary', () => {
+    const profile = aina();
+    profile.skills = { measurement: 3.5, inspection: 3.5, records: null, quality_data: 1.5, ai_inspection: 1.5, root_cause: null };
+    const role = roles.find(r => r.id === 'calibration')!;
+    const range = assess(profile, initialSnapshot, 'moderate', [role])[0];
+    const resolved = copy(profile); resolved.skills.records = 4; resolved.skills.root_cause = 4;
+    const maximum = assess(resolved, initialSnapshot, 'moderate', [role])[0];
+    expect(range.upperScore).toBe(90.83);
+    expect(range.upperScore).toBe(maximum.score);
+    expect(range.lowerScore).toBeLessThanOrEqual(range.upperScore);
+  });
+
   it('does not award perfect alignment for a zero denominator', () => {
     const role = qa(); skillIds.forEach(id => { role.weights[id] = 0; });
     const result = assess(aina(), initialSnapshot, 'moderate', [role])[0];
@@ -182,6 +222,30 @@ describe('prerequisite-aware affordable starter plans', () => {
     const plan = createPlan(profile, initialSnapshot, 'moderate', 'qa', roles, resources);
     expect(plan.steps).toEqual([]); expect(plan.weeks).toBe(0);
     expect(plan.warnings.join(' ')).toContain('positive weekly study allowance');
+  });
+
+  it('keeps the original plan pace and budget after profile edits and captures new constraints in a new revision', () => {
+    const profile = aina();
+    const original = createPlan(profile, initialSnapshot, 'moderate', 'qa', roles, resources);
+    const saved = structuredClone(original);
+    expect(original.constraints).toEqual({ weeklyHours: 4, budget: 0 });
+    expect(original.weeks).toBe(4);
+    profile.weeklyHours = 8;
+    profile.budget = 50;
+    profile.version += 1;
+    const revised = createPlan(profile, initialSnapshot, 'moderate', 'qa', roles, resources);
+    expect(revised.constraints).toEqual({ weeklyHours: 8, budget: 50 });
+    expect(revised.weeks).toBe(2);
+    expect(original).toEqual(saved);
+    expect(revised.id).not.toBe(original.id);
+    expect(revised.profileVersion).toBe(original.profileVersion + 1);
+  });
+
+  it('retains the input constraints even when no feasible steps can be scheduled', () => {
+    const profile = aina(); profile.weeklyHours = 0; profile.budget = 17;
+    const plan = createPlan(profile, initialSnapshot, 'moderate', 'qa', roles, resources);
+    expect(plan.steps).toEqual([]);
+    expect(plan.constraints).toEqual({ weeklyHours: 0, budget: 17 });
   });
 
   it('includes prerequisite cost in the budget and rejects unaffordable bundles', () => {
