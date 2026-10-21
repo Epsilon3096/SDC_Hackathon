@@ -1,0 +1,4 @@
+case,observed_fact,source_row_ids,hypothesis,alternative_explanation,test_that_could_reject_hypothesis,required_context,next_action,remaining_uncertainty
+QA,,,,,,,,
+Process,,,,,,,,
+Calibration,,,,,,,,

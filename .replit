@@ -1,0 +1,11 @@
+run = "npm run replit"
+entrypoint = "src/server/index.ts"
+modules = ["nodejs-24"]
+
+[deployment]
+run = ["sh", "-c", "NODE_ENV=production HOST=0.0.0.0 DEMO_REVIEW=true npm start"]
+build = ["sh", "-c", "npm ci && npm run build"]
+
+[[ports]]
+localPort = 3001
+externalPort = 80

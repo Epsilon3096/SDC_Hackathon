@@ -1,0 +1,25 @@
+sample_id,time_order,setting_group,material_lot,temperature_c,line_speed_units_per_min,checked_units,defect_units,maintenance_context
+P01,1,A,M-1,59,80,100,2,Not recorded
+P02,2,A,M-1,60,80,100,3,Not recorded
+P03,3,A,M-1,61,80,100,1,Not recorded
+P04,4,A,M-1,59,80,100,2,Not recorded
+P05,5,A,M-1,60,80,100,2,Not recorded
+P06,6,A,M-1,61,80,100,3,Not recorded
+P07,7,A,M-1,59,80,100,2,Not recorded
+P08,8,A,M-1,60,80,100,1,Not recorded
+P09,9,A,M-1,61,80,100,2,Not recorded
+P10,10,A,M-1,59,80,100,2,Not recorded
+P11,11,A,M-1,60,80,100,3,Not recorded
+P12,12,A,M-1,61,80,100,1,Not recorded
+P13,13,B,M-2,69,100,100,8,Not recorded
+P14,14,B,M-2,70,100,100,9,Not recorded
+P15,15,B,M-2,71,100,100,10,Not recorded
+P16,16,B,M-2,69,100,100,7,Not recorded
+P17,17,B,M-2,70,100,100,8,Not recorded
+P18,18,B,M-2,71,100,100,11,Not recorded
+P19,19,B,M-2,69,100,100,9,Not recorded
+P20,20,B,M-2,70,100,100,8,Not recorded
+P21,21,B,M-2,71,100,100,10,Not recorded
+P22,22,B,M-2,69,100,100,9,Not recorded
+P23,23,B,M-2,70,100,100,7,Not recorded
+P24,24,B,M-2,71,100,100,10,Not recorded

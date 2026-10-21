@@ -1,0 +1,13 @@
+reading_id,instrument_id,reference_mm,indicated_mm,repeat,illustrative_allowed_error_mm,reference_traceability,environment
+C01,TRAINING-INSTRUMENT-01,5.00,5.05,1,0.10,Not established,Not recorded
+C02,TRAINING-INSTRUMENT-01,5.00,5.06,2,0.10,Not established,Not recorded
+C03,TRAINING-INSTRUMENT-01,5.00,5.07,3,0.10,Not established,Not recorded
+C04,TRAINING-INSTRUMENT-01,10.00,10.07,1,0.10,Not established,Not recorded
+C05,TRAINING-INSTRUMENT-01,10.00,10.08,2,0.10,Not established,Not recorded
+C06,TRAINING-INSTRUMENT-01,10.00,10.09,3,0.10,Not established,Not recorded
+C07,TRAINING-INSTRUMENT-01,20.00,20.10,1,0.10,Not established,Not recorded
+C08,TRAINING-INSTRUMENT-01,20.00,20.11,2,0.10,Not established,Not recorded
+C09,TRAINING-INSTRUMENT-01,20.00,20.12,3,0.10,Not established,Not recorded
+C10,TRAINING-INSTRUMENT-01,30.00,30.14,1,0.10,Not established,Not recorded
+C11,TRAINING-INSTRUMENT-01,30.00,30.15,2,0.10,Not established,Not recorded
+C12,TRAINING-INSTRUMENT-01,30.00,30.16,3,0.10,Not established,Not recorded
