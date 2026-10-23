@@ -4,7 +4,7 @@ import { blankPracticeAnswers, checkPracticeAnswers, countDefinitions, countKind
   type InspectionCase, type PracticeAnswers, type PracticeFeedback } from './practice-exercise-state';
 import './practice-exercise.css';
 
-export function PracticeExercise() {
+export function PracticeExercise({ onReviewLearningSteps }: { onReviewLearningSteps?: () => void }) {
   const id = useId();
   const [opened, setOpened] = useState(false);
   const [cases, setCases] = useState<InspectionCase[]>([]);
@@ -87,6 +87,12 @@ export function PracticeExercise() {
               <div><strong>{item.title}</strong><span>{item.matches ? 'Matches the reference' : 'Revisit this answer'}</span></div><p>{item.explanation}</p>
             </li>)}</ul>
             <p className="qa-practice-takeaway"><strong>Discuss with a reviewer:</strong> Surface defects Q13–Q16 exist even though their dimensions are within the example limits. These binary flags cannot establish an optimal confidence threshold, real factory performance or safe automation. Explain the consequences of false alarms and missed defects in your own words; this app does not assess that explanation.</p>
+            <div className="qa-practice-next-step">
+              <h4>Put the feedback into practice</h4>
+              <p>Revisit any answers that need attention, then use your learning steps to practise explaining a false alarm, a missed defect and an unresolved measurement. Bring a short written explanation to a supervisor or qualified reviewer for feedback.</p>
+              {onReviewLearningSteps && <button type="button" className="button" onClick={onReviewLearningSteps}>Review my learning steps</button>}
+              <p className="qa-practice-next-step-note">Reviewing the steps does not change your plan, mark anything complete or increase your skill levels.</p>
+            </div>
           </section>}
         </form>}
       </div>}

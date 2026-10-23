@@ -23,7 +23,7 @@ The React/TypeScript interface calls a Fastify API. Synthetic worker profiles, p
 
 The arXiv connector fetches and validates Atom metadata, with an RSS fallback. Source content is untrusted. A reviewer selects an exact passage, records an interpretation and role scope, then approves it. A separate publication operation produces a new snapshot. Deterministic TypeScript code calculates skill alignment, qualification status and prerequisite-aware learning priorities. The worker explicitly adopts a plan; its original assessment, profile and constraints are captured for later export.
 
-An isolated rehearsal uses the same API operations with synthetic data and generation guards. It does not execute paid inference. RunPod performs bounded public-passage relevance triage. The app accepted one live Intel-passage result; six declared synthetic cases also completed. Similarity never publishes evidence or ranks workers. Replit contains an earlier development version; current hosting verification is pending. Validation includes automated tests and browser exercises, while human usability and workforce validation remain outstanding.
+An isolated rehearsal uses the same API operations with synthetic data and generation guards. It does not execute paid inference. RunPod performs bounded public-passage relevance triage. The app accepted one live Intel-passage result; six declared synthetic cases also completed. Similarity never publishes evidence or ranks workers. Replit commit `b9e1365` passed tests/build/smoke; later UI refinements and production publication remain pending. Validation includes automated tests and browser exercises, while human usability and workforce validation remain outstanding.
 <!-- /word-limit -->
 
 A system block diagram appears in proposal section 3.1.
@@ -50,7 +50,7 @@ No payment, recruitment, email, mapping or messaging APIs are called by the appl
 
 | Service/provider | Purpose | Plan/region and actual status |
 | --- | --- | --- |
-| Replit development workspace and managed PostgreSQL | Earlier source import, HTTPS standalone preview, database persistence check. | **REQUIRED INPUT — exact plan/region/resource account details if required.** Public publishing was not completed. Latest local changes still need upload and verification; setup is active within existing credits. |
+| Replit development workspace and managed PostgreSQL | Earlier source import, HTTPS standalone preview, database persistence check. | Commit `b9e1365`: 257 tests/build/smoke passed; later UI changes await upload. Existing Core/US$20 credit confirmed; auto-reload off. Unpublished Autoscale configuration: 1 CPU, 1 GiB, max 1 instance, Asia, fresh production database. |
 | RunPod | Bounded GPU relevance service. | Endpoint `0qcgjcclf6fln9`, container built from private source; first real passage and six synthetic jobs completed. One 16 GB GPU family; quoted runtime US$0.58/hour; max 1/active 0 workers; idle 5s; execution 120s. Region and actual completed-job usage remain to be recorded. |
 | GitHub | Private GPU build input; full app source delivery still pending. | Private `Epsilon3096/shiftbridge-inference`, commit `5ddfef5b7f553d6e1d1b9618fcaf9f6e4f007598`, connected with repository-only permission. This is not the full app judge-access source link. |
 | Local Windows + PGlite | Current development, tests and persisted demo. | Local execution; not cloud hosting. |
@@ -86,7 +86,7 @@ No dataset was used to train or fine-tune a model. No private employer records, 
 | Tool/version | Used for | Extent |
 | --- | --- | --- |
 | OpenAI Codex; **REQUIRED INPUT — copy exact session model/version from the app/session record** | Research assistance, initial concept/strategy, UI design, implementation, tests, critique, documentation, this draft and coordinated agent review. | **Major.** Do not describe this as minor autocomplete or only grammar checking. |
-| Google Gemini interface using the Argon picker; **REQUIRED INPUT — underlying model/version unverified** | Strategic critique only. Accepted suggestions clarified reviewer/worker perspectives and foregrounded the synthetic confusion-table practice. Unsupported compliance, scale, time-saving, expert-calibration and employment claims were rejected. | **Minor relative to the overall build; participant confirms actual extent.** Do not treat the picker label as a verified model identity. |
+| Google Gemini interface using the Argon picker; **REQUIRED INPUT — underlying model/version unverified** | Ideas-only reviews on 21 and 23 October. Accepted suggestions clarified reviewer/worker perspectives, foregrounded synthetic practice and connected feedback voluntarily to the plan. The follow-up also prompted a clearer negation/vocabulary warning. Unsupported compliance, scale, time-saving, expert-calibration and employment claims were rejected. | **Minor relative to the overall build; participant confirms actual extent.** Do not treat the picker label as a verified model identity. |
 | Other team-used AI tools | **REQUIRED INPUT — add every additional tool or write None after checking with all members.** | Confirm truthfully. |
 
 #### Review, testing and responsibility — maximum 100 words

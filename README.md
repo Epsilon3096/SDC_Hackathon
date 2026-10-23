@@ -24,7 +24,7 @@ No key or external database is required locally. PGlite runs embedded PostgreSQL
 
 `docs/submission/README.md` indexes the Console proposal, technical declaration, requirements-to-proof matrix, 6:40 recording script, deck copy, dependency inventory and blank evaluation sheet. All eight bounded template responses have reproducible word checks. Required human declarations, baseline evidence and public links remain clearly marked. Private contact details and signed forms do not belong in this public source directory.
 
-Gemini provided ideas and critical review on 21 October; three follow-up attempts on 22 October failed with service errors and supplied no new critique. Accepted changes and rejected overclaims are documented in `docs/GEMINI_REVIEW.md`. This remains a synthetic demonstration, with one application-accepted live GPU result and a six-case synthetic triage smoke evaluation; no commercial deployment is claimed.
+Gemini provided ideas-only reviews on 21 and 23 October. Three intervening attempts on 22 October failed. The successful follow-up led to voluntary practice-to-plan navigation and a clearer warning about negated or vocabulary-matching passages; no code was requested. Accepted changes and rejected overclaims are documented in `docs/GEMINI_REVIEW.md`. This remains a synthetic demonstration, with one application-accepted live GPU result and a six-case synthetic triage smoke evaluation; no commercial deployment is claimed.
 
 ## Product boundaries
 
@@ -43,7 +43,7 @@ Gemini provided ideas and critical review on 21 October; three follow-up attempt
 
 ## Replit
 
-Development and platform setup are proceeding within the participant's existing US$20 Replit and US$25 RunPod credits. The Replit workspace contains an earlier working version; the latest source still needs upload and hosted verification. A RunPod queue endpoint was created from the private worker repository and its container built successfully. A completed Intel-passage GPU result was accepted by the app and six synthetic triage jobs completed. A final public application deployment remains unverified. Keeping source in Replit is not, by itself, verified competition proof of use.
+Development and platform setup are proceeding within the participant's existing US$20 Replit and US$25 RunPod credits. Source commit `b9e1365` was uploaded to Replit with all 96 files verified, and its 257-test suite, production build and smoke test passed there. Later practice-navigation and warning improvements are locally verified and require the next upload. A RunPod queue endpoint was created from the private worker repository and its container built successfully. A completed Intel-passage GPU result was accepted by the app and six synthetic triage jobs completed. A final public application deployment remains unverified. Keeping source in Replit is not, by itself, verified competition proof of use.
 
 The 23 October local checkpoint passed 257 application tests, with three optional real-PostgreSQL tests skipped, plus TypeScript checking, the production build, built-app smoke test and 11 offline Python worker tests. See `docs/BUILD_STATUS.md` for dated evidence and remaining release gates. Scan source with `python scripts/package-release.py --scan-only`; after committing verified source, create a new archive with `python scripts/package-release.py --output ../ShiftBridge_Replit_Source_23Oct.zip`.
 

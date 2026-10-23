@@ -52,6 +52,7 @@ export function SourceInference({ source, data, busy, mutate }: Props) {
   return <section className="source-inference" aria-label={`Relevance triage: ${source.title}`}>
     <div className="source-inference-heading"><FlaskConical size={16}/><strong>{statusText}</strong></div>
     <p>Similarity helps a reviewer decide what to read. It does not establish deployment, workforce impact or a valid skill rule.</p>
+    <p>Matching vocabulary can score highly even when a passage denies a claim. Read the full passage and verify what it actually supports.</p>
     {blockedReason && <p className="source-inference-boundary">{blockedReason}</p>}
     {inference?.error && inference.status !== 'unconfigured' && <p className="source-inference-boundary">{inference.error}</p>}
     {inference && <details><summary>Model and request record</summary><RequestRecord inference={inference}/></details>}

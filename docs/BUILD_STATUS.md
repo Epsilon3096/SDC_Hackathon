@@ -19,7 +19,7 @@ Implemented in the release candidate:
 
 The QA exercise was completed in the local browser: TP 6, TN 9, FP 3, FN 2; missed cases Q19/Q20; missing measurement Q07. All six feedback checks matched the reference. The accepted plan remained at one of four completed steps. At 390px the exercise displayed responsive case cards without horizontal overflow. This is browser emulation, not a physical-device or full accessibility audit.
 
-Three fresh Gemini critique attempts failed with service errors, including a fresh chat. No new critique or endorsement was obtained. The earlier 21 October ideas-only review and later implementation decisions are distinguished in `GEMINI_REVIEW.md`.
+After three failed attempts on 22 October, a new ideas-only Gemini review succeeded on 23 October. The voluntary practice-to-plan action and explicit warning about negated/vocabulary-matching passages were applied; unvalidated thresholds and invented results were rejected. The four changed UI files passed 56 relevant tests and the production build. Browser verification moved focus to “Your learning steps” on `#pathway` while preserving 25% / one of four completed steps. See `GEMINI_REVIEW.md`.
 
 ## Earlier local checkpoint — 21 October
 
@@ -50,13 +50,15 @@ The following observations describe the previous release. They remain historical
 
 ## Replit development verification
 
-The participant has resumed setup using existing **US$20 Replit and US$25 RunPod credits**. The earlier platform deferral no longer applies. No new subscription, top-up or spending above those balances is authorised. Credits do not themselves prove a deployment or enforce a provider spending cap. The following records earlier Replit verification, not verification of the latest local source.
+The participant has resumed setup using existing **US$20 Replit and US$25 RunPod credits**. The earlier platform deferral no longer applies. No new subscription, top-up or spending above those balances is authorised. Credits do not themselves prove a deployment or enforce a provider spending cap. The 23 October Replit checkpoint covers commit `b9e1365`; the later Gemini-inspired UI refinements still need an updated upload.
 
-- Source imported into https://replit.com/@kingyang3096/ShiftBridge.
+- Source commit `b9e1365` was uploaded into https://replit.com/@kingyang3096/ShiftBridge. All 96 package files and the pre-update backup were verified.
+- `npm run verify` passed in the actual Replit environment: 257 tests passed, three optional PostgreSQL tests skipped, and TypeScript/Vite build plus built-app smoke passed. The earlier platform-specific temporary-directory failure did not recur.
 - Node 22.22.0 runs the production build and Fastify on port 3001 with managed PostgreSQL. The HTTPS startup configuration includes Replit development environments.
 - A synthetic worker plan was saved through the standalone HTTPS preview and its first step completed. After the server restarted, the saved plan still showed 1 of 4 steps complete (25%).
 - Publishing controls have since become available, but no new public production deployment or final judge-accessible URL has been verified. The development preview depends on the workspace runtime and is not a stable submission link.
-- The earlier subscription/voucher failure is historical. It is not a current blocker established by this record. The latest local improvements still need upload, hosted tests and final deployment verification.
+- Existing Replit Core displayed an expiry of 22 November 2026; US$20 usage credit was confirmed and credit auto-reload was off. The reviewer secret and three RunPod settings were saved privately.
+- Public deployment is configured for Autoscale, one CPU, 1 GiB RAM, maximum one instance, Asia, and a fresh production database with no development data copied. `PUBLIC_ORIGIN` is set to the planned `https://shift-bridge-kingyang3096.replit.app` origin. It is not yet published or verified as a judge-accessible link.
 
 ## RunPod — initial live execution verified
 
@@ -64,12 +66,12 @@ Executable worker source was uploaded to the private [Epsilon3096/shiftbridge-in
 
 The app accepted the completed Intel-passage GPU result with model/revision/preprocessing/source/text provenance. Provider delay was 61,368 ms, execution 3,314 ms, and cosine similarity 0.6027023196220398. Six declared synthetic triage cases then completed on CUDA; both direct inspection cases scored above both unrelated cases (4/4 pair comparisons). This is a tiny constructed smoke result, not accuracy, calibration, a production latency benchmark or employment evidence. No 0.65 threshold is applied.
 
-See [RUNPOD_VERIFICATION.md](RUNPOD_VERIFICATION.md) and the retained provider JSON under `docs/evidence/` for exact jobs/results. Actual usage inspection, final Replit upload/deployment, judge access and broader model evaluation remain outstanding. The private worker repository is not the full application's public submission link.
+See [RUNPOD_VERIFICATION.md](RUNPOD_VERIFICATION.md) and the retained provider JSON under `docs/evidence/` for exact jobs/results. Actual billed-usage inspection, the later UI upload, public deployment, judge access and broader model evaluation remain outstanding. The private worker repository is not the full application's public submission link.
 
 ## Remaining boundaries
 
 - Mobile browser verification covers one 390px viewport, not a physical device or a complete assistive-technology audit.
-- The final source must later be uploaded and reverified in Replit. The earlier hosted test run had one platform-specific temporary-directory failure; the local fix now passes, but it has not been rerun remotely. A published deployment needs separate verification. See DEPLOYMENT.md.
+- Commit `b9e1365` passed hosted checks. Later UI refinements still need upload; a published production deployment and new-session access need separate verification. See DEPLOYMENT.md.
 - Initial RunPod execution is verified as described above. The existing-credit budget remains in force; inspect actual usage and retain zero active/max one worker settings. Local contract tests and the tiny live smoke set do not prove general model quality.
 - Personas and practice datasets are synthetic. Role requirements and weights are transparent prototype assumptions, not universal hiring standards. Adjacent-role qualification requirements remain unverified.
 - New Intel mappings are QA-scoped. Older mappings without stored scope preserve their historical all-route behaviour and display a legacy label; correcting an old published scope requires retirement and replacement, not silent rewriting.
@@ -85,4 +87,4 @@ Run `npm ci`, `npm run verify`, `npm audit --omit=dev`, and the Python worker te
 
 Use `python scripts/package-release.py --scan-only` while preparing source. After committing the verified release, use `python scripts/package-release.py --output ../ShiftBridge_Replit_Source_23Oct.zip` with an unused output name. The script puts source files at the ZIP root, excludes runtime data, dependency directories, credentials and private binary submission documents, verifies archive contents, and writes a SHA-256 manifest. It does not run application tests or claim deployment; its heuristic scan is not a guarantee that arbitrary files contain no secrets.
 
-No final 23 October release ZIP has yet been created at this checkpoint. Earlier ZIPs, PDFs and decks remain dated draft artifacts and must not be labelled as this release.
+The 23 October source ZIP and manifest for commit `b9e1365` were created and used for the verified Replit upload. They predate the later Gemini-inspired UI/documentation refinements; package those under a new filename after verification. Existing private PDFs and decks remain older draft artifacts.

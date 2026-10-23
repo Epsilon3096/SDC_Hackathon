@@ -55,7 +55,7 @@ Workshop themes reflected in the architecture include API integration, PostgreSQ
 | Storage | PostgreSQL JSONB workspace records with transactional changes; PGlite for local persistence, `pg` for managed PostgreSQL. This build does not use a multi-table ORM architecture. |
 | Updatable source | arXiv Atom API with category RSS fallback. Manual refresh is real; a fetched paper is a candidate, not approved labour evidence. |
 | AI integration, initial execution verified | RunPod endpoint and executable worker for `BAAI/bge-large-en-v1.5` relevance triage. Model revision is pinned in the contract; the app accepted a completed Intel-passage result and six declared synthetic cases completed. Wider relevance evaluation remains outstanding. |
-| Hosting, verification pending | Replit configuration and an earlier development preview were tested. The current source has no verified public production URL. |
+| Hosting, verification pending | Commit `b9e1365` passed Replit tests/build/smoke; later UI refinements await upload. The current source has no verified public production URL. |
 | Verification | Vitest domain/API/connector/client-helper tests, TypeScript checking, production build and recorded browser checks. |
 
 ```text
@@ -85,7 +85,7 @@ The prototype allows profile edits, scenario comparison, evidence inspection and
 
 Implementation verification covers scoring, unknowns, prerequisites, review/publication separation, historical preservation and database persistence. Browser checks exercise the real API at desktop and mobile widths. A small independent usability study is planned to compare selecting a justified next step with a static catalogue versus ShiftBridge; no measured improvement is claimed.
 
-Before deployment, the team must finish ownership review, validate the problem with intended users, complete the impact baseline, prepare judge-accessible links and verify the final hosted build. Initial RunPod inference is verified; the latest Replit build still needs hosted verification. The team will update declarations and evidence after those actions, rather than present a local demonstration as a deployed AI service.
+Before deployment, the team must finish ownership review, validate the problem with intended users, complete the impact baseline, prepare judge-accessible links and verify the final hosted build. RunPod inference and Replit checks passed; publication remains pending. The team will update declarations and evidence after those actions, rather than present a local demonstration as a deployed AI service.
 <!-- /word-limit -->
 
 ## 4. Preliminary environmental and SDG impact framework

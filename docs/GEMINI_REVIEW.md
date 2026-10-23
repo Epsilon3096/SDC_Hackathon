@@ -6,11 +6,25 @@ Conversation: https://gemini.google.com/app/9b4e31273e002e09 (account access may
 
 ## Follow-up attempt on 22 October
 
-The participant requested another discussion about remaining improvements. Three Gemini attempts failed: two in the existing chat and one in a fresh chat. No usable new recommendations were obtained, so this release does not claim a new Gemini review, endorsement or assessment that improvement is exhausted. The accepted critique below is the earlier 21 October review. Subsequent implementation decisions came from direct inspection and development review.
+Three Gemini attempts failed on 22 October: two in the existing chat and one in a fresh chat. Those attempts supplied no recommendations. A later ideas-only review succeeded on 23 October, recorded below; the failed attempts must not be presented as that review or as an endorsement that improvement is exhausted.
 
-The independent code and product review found useful further work: source-level triage before an interpretation is proposed, safer paid-request handling, and a QA exercise that can be completed inside the app. These are concrete improvements, not evidence that the product is complete or likely to win. The participant also authorised the existing US$20 Replit/US$25 RunPod credits; new subscriptions and top-ups remain unauthorised. Integration preparation is described in [DEPLOYMENT.md](DEPLOYMENT.md) and [runpod/README.md](../runpod/README.md), without claiming an already deployed GPU worker.
+The independent code and product review found useful further work: source-level triage before an interpretation is proposed, safer paid-request handling, and a QA exercise that can be completed inside the app. These are concrete improvements, not evidence that the product is complete or likely to win. The participant authorised existing US$20 Replit/US$25 RunPod credits; new subscriptions and top-ups remain unauthorised. Subsequent genuine GPU execution and platform checks are recorded in [RUNPOD_VERIFICATION.md](RUNPOD_VERIFICATION.md) and [DEPLOYMENT.md](DEPLOYMENT.md).
 
-## Accepted and adapted
+## Successful follow-up — 23 October
+
+[Gemini review conversation](https://gemini.google.com/app/9e884f5bcae87e2c) (account access may be required). Gemini received a non-secret product brief and was asked only for suggestions and ideas. No code, private worker data or credentials were supplied, and it was not asked to develop the application.
+
+| Suggestion | Decision and evidence |
+| --- | --- |
+| Ambiguous passages can have high similarity | Applied an explicit warning that matching vocabulary and negated claims require inspection; semantic similarity does not establish deployment or workforce impact. The live smoke case with negated inspection keywords scored above the real Intel passage, illustrating this limit. Rejected an unvalidated confidence threshold and keyword/domain prefilter. |
+| Connect practice feedback to the learning pathway | Added an optional action from practice feedback to the actual learning steps. Browser verification confirmed focus moved to “Your learning steps” on `#pathway`, while the accepted plan stayed at 25% / one of four steps. It does not adopt a plan, save proficiency or award competence. |
+| Demonstrate another verifiable source | Retained as a demo improvement to verify separately. Use only an actual supported source with its real date and bounded claim. Gemini's proposed IPC/NOSS additions require primary-source verification; no broader subsector validation is claimed. |
+
+Gemini incorrectly named **bge-base**; the executed model is **BAAI/bge-large-en-v1.5**. Its “17/20 classifications” and “Module 3” examples were invented illustrations, not results from this project. They were not adopted. “Diagnostic readiness” would overstate this teaching exercise and was also rejected. The review is useful input, not prize prediction, certification or an assertion that there is no remaining room to improve.
+
+The four-file UI follow-through passed 56 relevant tests and the production build. Its voluntary navigation was browser-checked. The separately recorded Replit verification is for source commit `b9e1365`; these later UI changes require an updated upload before their hosted behavior can be claimed.
+
+## Earlier 21 October suggestions accepted and adapted
 
 | Suggestion | Decision and evidence |
 | --- | --- |
@@ -24,7 +38,7 @@ The independent code and product review found useful further work: source-level 
 
 - No claim of audit certification, ISO compliance, empirically calibrated or expert-authored weights, five-minute monthly review effort, a 200-worker deployment, or prevented displacement.
 - A historical Intel source is not proof of a current Malaysian deployment. A reviewed passage does not validate the numerical rule or the entire learning pathway.
-- Runtime planning is deterministic; source review is human-curated. AI-assisted development does not mean a live AI model runs in the application. A bounded executable relevance worker and source-level triage UI are now prepared, but no remote GPU build, deployed endpoint or live inference result is established. Credit authorisation and a private build-input repository do not supply that proof.
+- Runtime planning is deterministic; source review is human-curated. AI-assisted development is separate from actual inference. A completed Intel-passage result was accepted by the app and six declared synthetic jobs completed on RunPod; exact evidence is in `RUNPOD_VERIFICATION.md`. These narrow results do not establish general model accuracy or occupational validity.
 - Organisation-wide evidence sharing is proposed future work. Current publication is isolated to the visitor's synthetic workspace. It must not be described as an existing multi-tenant service.
 - Gemini's hypothetical judge scores and guesses about buyer behaviour are not evidence. The reviewer cannot establish prize likelihood or competition eligibility.
 - Short educational practice does not certify proficiency, machine-operation permission, hiring eligibility or readiness for unsupervised industrial work.
@@ -35,7 +49,7 @@ Opening: “Farid has four hours a week to learn. Which QA skills should come fi
 
 Closing: “The old plan remains available. Farid can inspect the reason for the new order, adopt it deliberately, and download the recorded decision. Next we need independent QA review and real-user testing; the demo does not prove employment outcomes.”
 
-If showing Sources & triage, describe recorded similarity as help deciding what to read. Keep a research abstract distinct from deployment evidence, and show that a relevance result cannot publish a rule. Until a real GPU job is verified, describe its actual configuration/build status honestly; do not substitute a synthetic score or describe an endpoint as proven inference. The synthetic QA exercise is a separate authored teaching example; its hypothetical AI flags must never be described as predictions produced by the RunPod relevance model.
+If showing Sources & triage, describe recorded similarity as help deciding what to read. Keep a research abstract distinct from deployment evidence, and show that a relevance result cannot publish a rule. Show the actual completed result and its provenance, not an invented score or universal cutoff. The synthetic QA exercise is a separate authored teaching example; its hypothetical AI flags must never be described as predictions produced by the RunPod relevance model. After feedback, use the optional plan action to show how the learner can return to their accepted next steps without changing progress automatically.
 
 ## Commercial pilot hypothesis — not a launch claim
 

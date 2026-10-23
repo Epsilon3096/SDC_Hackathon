@@ -44,7 +44,7 @@ Inventory generator runtime: Node.js v24.14.0. Earlier hosted verification used 
 
 Node.js, npm and PostgreSQL have their own distribution notices and bundled dependencies. The package inventory is not a complete operating-system or cloud-service software bill of materials.
 
-OpenAI Codex and Gemini are development services under their provider/account terms, not Apache-licensed runtime dependencies. Exact assistant model identities require participant confirmation. The planned BAAI model has not executed; verify its exact model card/licence and deployed revision before activation.
+OpenAI Codex and Gemini are development services under their provider/account terms, not Apache-licensed runtime dependencies. Exact assistant model identities require participant confirmation. The BAAI model executed at pinned revision `d4aa6901d3a41ba39fb536a557fa166f842b0e09`; see `../RUNPOD_VERIFICATION.md` for genuine jobs and limits. Complete the final model-card/licence review. The npm inventory excludes Python worker dependencies listed in `runpod/requirements.txt` and its Dockerfile.
 
 TalentCorp, Intel, O*NET, arXiv, Microsoft Learn, ASQ and NIST references retain their source-specific rights. Do not treat public access as a blanket right to redistribute reports, papers or courses. Application code licensing does not relicense that content.
 

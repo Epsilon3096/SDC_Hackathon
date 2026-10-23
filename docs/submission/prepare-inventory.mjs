@@ -7,6 +7,7 @@ const app = resolve(here, '../..');
 const rawLock = await readFile(resolve(app, 'package-lock.json'), 'utf8');
 const lock = JSON.parse(rawLock);
 const pkg = JSON.parse(await readFile(resolve(app, 'package.json'), 'utf8'));
+const generatedDate = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kuala_Lumpur' }).format(new Date());
 const purposes = {
   '@electric-sql/pglite': 'Local embedded PostgreSQL storage', '@fastify/cookie': 'Session-cookie handling',
   '@fastify/rate-limit': 'API request rate limits', '@fastify/static': 'Serve the built client', dotenv: 'Environment configuration',
@@ -28,7 +29,7 @@ await writeFile(resolve(here, 'dependency-licenses.csv'), [
 ].join('\n') + '\n');
 const lines = [
   '# Dependency declaration appendix', '',
-  'Generated from the local package-lock.json on 21 October 2026. These are resolved versions and package-declared licence identifiers, not version ranges or a legal opinion. Keep upstream notices; verify the distributed artefacts and any missing metadata before release.', '',
+  `Generated from the local package-lock.json on ${generatedDate}. These are resolved versions and package-declared licence identifiers, not version ranges or a legal opinion. Keep upstream notices; verify the distributed artefacts and any missing metadata before release.`, '',
   `Lockfile SHA-256: \`${createHash('sha256').update(rawLock).digest('hex')}\`.`,
   `Lockfile inventory: ${entries.length} package entries, including transitive and optional platform entries. Missing licence metadata: ${entries.filter(row => row.license === 'NOT_RECORDED').length}.`,
   'Full inventory: [dependency-licenses.csv](dependency-licenses.csv). Not every optional platform entry is installed or executed on this Windows host.', '',
@@ -42,9 +43,11 @@ for (const [group, dependencies] of [['Runtime', pkg.dependencies], ['Developmen
   lines.push('');
 }
 lines.push('## Other tools and material', '',
-  `Inventory generator runtime: Node.js ${process.version}. Earlier hosted verification used Node.js 22.22.0. Record the final host runtime, npm and database versions when deployment is resumed.`, '',
+  `Inventory generator runtime: Node.js ${process.version}. The 23 October 2026 Replit checkpoint for commit b9e1365 passed 257 tests, with three optional PostgreSQL tests skipped, plus the production build and built-app smoke test. Earlier hosted verification used Node.js 22.22.0. Public production deployment was still pending at that checkpoint; record the final host runtime, npm and database versions when verified. See ../BUILD_STATUS.md for subsequent changes.`, '',
   'Node.js, npm and PostgreSQL have their own distribution notices and bundled dependencies. The package inventory is not a complete operating-system or cloud-service software bill of materials.', '',
-  'OpenAI Codex and Gemini are development services under their provider/account terms, not Apache-licensed runtime dependencies. Exact assistant model identities require participant confirmation. The planned BAAI model has not executed; verify its exact model card/licence and deployed revision before activation.', '',
+  'OpenAI Codex and Gemini are development services under their provider/account terms, not Apache-licensed runtime dependencies. Exact assistant model identities require participant confirmation. Gemini supplied ideas-only reviews; it did not develop the code.', '',
+  'BAAI/bge-large-en-v1.5 executed on RunPod at revision d4aa6901d3a41ba39fb536a557fa166f842b0e09 on 23 October 2026. Seven GPU jobs completed: one public Intel passage accepted by the app and six declared synthetic relevance cases. Both direct inspection cases ranked above both unrelated cases (4/4 pair comparisons), but the negated-keyword case scored above the real Intel passage. This bounded smoke evaluation does not establish accuracy, threshold calibration, occupational readiness or employment outcomes. See [RUNPOD_VERIFICATION.md](../RUNPOD_VERIFICATION.md) for exact provenance and limitations; no universal 0.65 cutoff is applied.', '',
+  'The npm inventory excludes the Python worker dependencies listed in ../../runpod/requirements.txt and ../../runpod/Dockerfile: PyTorch, Transformers, huggingface-hub, safetensors and the RunPod SDK. Direct versions are pinned; transitive Python hashes are not frozen. Complete the final model-card/licence and distributed-container notices review. Executed model provenance does not by itself establish licensing clearance.', '',
   'TalentCorp, Intel, O*NET, arXiv, Microsoft Learn, ASQ and NIST references retain their source-specific rights. Do not treat public access as a blanket right to redistribute reports, papers or courses. Application code licensing does not relicense that content.', '',
   'Regenerate with `node docs/submission/prepare-inventory.mjs` after dependency changes. This command only writes the two inventory files in this submission directory.', '');
 await writeFile(resolve(here, 'DEPENDENCIES.md'), lines.join('\n'));
