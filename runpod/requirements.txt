@@ -1,5 +1,10 @@
 # Direct worker dependencies. Torch/CUDA come from the digest-pinned base image.
 runpod==1.12.0
-transformers==4.57.6
-huggingface-hub==0.36.2
-safetensors==0.7.0
+transformers==5.20.2
+huggingface-hub==1.31.0
+safetensors==0.8.0
+# Remove the compromised emSign root from HTTPS trust bundles.
+certifi==2026.10.19
+# Pin the audited HTTP transitive packages used by the RunPod SDK's FastAPI extras.
+httpx2==2.16.0
+httpcore2==2.16.0

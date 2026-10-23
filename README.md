@@ -85,3 +85,5 @@ Public source excerpts are kept short in the baseline catalogue and link to thei
 Codex assisted with research, design, implementation and tests. The participant team must understand and own the final problem framing, design decisions and presentation, and accurately declare all AI/tool use. This repository does not represent the competition organisers and does not guarantee eligibility, sponsor compliance or a prize.
 
 Original application code: Apache-2.0. Third-party dependencies and source material retain their respective licences and rights. Do not imply that the code licence relicenses source reports or course content.
+
+[Third-party notices](public/THIRD_PARTY_NOTICES.txt) include the browser libraries' full copyright and permission texts, with a pointer retained in the built JavaScript. The same file is served at `/THIRD_PARTY_NOTICES.txt`. [Worker notices](runpod/THIRD_PARTY_NOTICES.txt) retain the pinned BGE model's upstream MIT notice and identify installed library licences.

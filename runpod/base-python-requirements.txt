@@ -1,0 +1,3 @@
+# Audit only: keep this version aligned with the digest-pinned Dockerfile base.
+# This is not an inventory of the container's OS/CUDA or all preinstalled packages.
+torch==2.13.0

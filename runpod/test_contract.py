@@ -2,6 +2,7 @@
 import hashlib
 import unittest
 import tempfile
+import re
 from pathlib import Path
 from unittest.mock import patch
 
@@ -38,6 +39,19 @@ class ContractTests(unittest.TestCase):
         for revision in (None, "main", "A" * 40, "abc"):
             with self.subTest(revision=revision), self.assertRaises(ValueError):
                 validate_input(sample(), revision)
+
+    def test_pre_upgrade_runtime_contract_cannot_reuse_new_worker_results(self):
+        value = sample() | {"preprocessing": "bge-cls-l2-512-bounded2000-v2"}
+        with self.assertRaisesRegex(ValueError, "Unsupported preprocessing"):
+            validate_input(value, value["revision"])
+
+    def test_base_torch_audit_pin_matches_the_container_runtime(self):
+        folder = Path(__file__).parent
+        image_version = re.search(r"^FROM pytorch/pytorch:([0-9.]+)-", (folder / "Dockerfile").read_text(), re.MULTILINE)
+        audit_version = re.search(r"^torch==([0-9.]+)$", (folder / "base-python-requirements.txt").read_text(), re.MULTILINE)
+        self.assertIsNotNone(image_version)
+        self.assertIsNotNone(audit_version)
+        self.assertEqual(image_version.group(1), audit_version.group(1))
 
     def test_cached_model_must_match_the_exact_pinned_revision(self):
         with tempfile.TemporaryDirectory() as folder:

@@ -9,6 +9,22 @@ permissions:
   contents: read
 
 jobs:
+  worker-dependencies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6, verified 2026-10-21
+      - name: Install pinned dependency auditor
+        run: |
+          python3 -m venv .audit-venv
+          .audit-venv/bin/python -m pip install pip==26.2.2 pip-audit==2.10.1
+      # Resolves the real worker requirements and their transitives. The CUDA,
+      # PyTorch and OS packages in the base image require a separate image scan.
+      - name: Audit worker dependencies without ignoring findings
+        run: .audit-venv/bin/python -m pip_audit --strict --progress-spinner off -r runpod/requirements.txt
+      - name: Audit the pinned PyTorch base version
+        run: .audit-venv/bin/python -m pip_audit --strict --progress-spinner off --no-deps -r runpod/base-python-requirements.txt
+
   worker-contract:
     runs-on: ubuntu-latest
     timeout-minutes: 3

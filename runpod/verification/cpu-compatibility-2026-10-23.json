@@ -1,0 +1,28 @@
+{
+  "mode": "local-cpu-compatibility-only",
+  "device": "cpu",
+  "gpuValidated": false,
+  "model": "BAAI/bge-large-en-v1.5",
+  "revision": "d4aa6901d3a41ba39fb536a557fa166f842b0e09",
+  "preprocessing": "bge-cls-l2-512-bounded2000-v3",
+  "modelClass": "BertModel",
+  "tokenizerClass": "BertTokenizer",
+  "embeddingShape": [
+    2,
+    1024
+  ],
+  "normalized": true,
+  "syntheticCosine": 0.7010325193405151,
+  "boundedTokens": 512,
+  "cudaGuard": "production handler refused CPU fallback",
+  "modelSafetensorsSha256": "45e1954914e29bd74080e6c1510165274ff5279421c89f76c418878732f64ae7",
+  "versions": {
+    "torch": "2.13.0+cpu",
+    "transformers": "5.20.2",
+    "huggingface-hub": "1.31.0",
+    "safetensors": "0.8.0",
+    "certifi": "2026.10.19",
+    "runpod": "1.12.0"
+  },
+  "limits": "API/model compatibility smoke only. No RunPod job, CUDA result, accuracy or security certification."
+}
