@@ -11,8 +11,8 @@ Draft text updated 23 October 2026; the earlier rendered PDF must be regenerated
 | Leader name | Tan King Yang |
 | Leader email and phone | Supplied separately for the private official PDF; intentionally omitted here. |
 | University affiliation(s) | UTAR |
-| Live prototype URL | **REQUIRED EXTERNAL INPUT — no verified stable production URL for the current version.** Local application is runnable; Replit publishing is in preparation. An earlier development preview is not a stable judge link. |
-| Code repository URL, public or judge access | [Epsilon3096/SDC_Hackathon](https://github.com/Epsilon3096/SDC_Hackathon). Public anonymous access verified; eight commits through `71489cc` preserved. Maintain access throughout judging. |
+| Live prototype URL | [ShiftBridge live prototype](https://shift-bridge-kingyang3096.replit.app). Public HTTPS access passed 24 independent checks on 23 October 2026; patched v3 GPU verification remains separate and pending. |
+| Code repository URL, public or judge access | [Epsilon3096/SDC_Hackathon](https://github.com/Epsilon3096/SDC_Hackathon). Public anonymous access verified; original history preserved through `f056cef`. Maintain access throughout judging. |
 
 ## 2. Architecture and technology stack
 
@@ -23,7 +23,7 @@ The React/TypeScript interface calls a Fastify API. Synthetic worker profiles, p
 
 The arXiv connector fetches and validates Atom metadata, with an RSS fallback. Source content is untrusted. A reviewer selects an exact passage, records an interpretation and role scope, then approves it. A separate publication operation produces a new snapshot. Deterministic TypeScript code calculates skill alignment, qualification status and prerequisite-aware learning priorities. The worker explicitly adopts a plan; its original assessment, profile and constraints are captured for later export.
 
-An isolated rehearsal uses the same API operations with synthetic data and generation guards. It does not execute paid inference. RunPod performs bounded public-passage relevance triage. The app accepted one live Intel-passage result; six declared synthetic cases also completed. Similarity never publishes evidence or ranks workers. Replit commit `423bf15` passed tests/build/smoke. Publication awaits Transformers/certifi security remediation and renewed verification. Validation includes automated tests and browser exercises, while human usability and workforce validation remain outstanding.
+An isolated rehearsal uses the same API operations with synthetic data and generation guards. It does not execute paid inference. RunPod performs bounded public-passage relevance triage. The app accepted one live Intel-passage result; six declared synthetic cases also completed. Similarity never publishes evidence or ranks workers. Replit `f056cef` passed tests/build/smoke and the published app passed 24 HTTPS checks. Patched v3 GPU execution remains unverified. Validation includes automated tests and browser exercises, while human usability and workforce validation remain outstanding.
 <!-- /word-limit -->
 
 A system block diagram appears in proposal section 3.1.
@@ -50,9 +50,9 @@ No payment, recruitment, email, mapping or messaging APIs are called by the appl
 
 | Service/provider | Purpose | Plan/region and actual status |
 | --- | --- | --- |
-| Replit development workspace and managed PostgreSQL | Earlier source import, HTTPS standalone preview, database persistence check. | Commit `423bf15`: 257 tests/build/smoke passed; `71489cc` Autoscale target applied. Publication awaits dependency-security remediation. Existing Core/US$20 credit confirmed; auto-reload off. Unpublished Autoscale configuration: 1 CPU, 1 GiB, max 1 instance, Asia, fresh production database. |
+| Replit development workspace and managed PostgreSQL | Earlier source import, HTTPS standalone preview, database persistence check. | Commit `f056cef`: 257 tests (three skipped), build and smoke passed. Published app: 24 HTTPS checks passed. Security scan: zero active/zero dismissed findings. Core/US$20 credit confirmed; auto-reload off. Autoscale: 1 CPU, 1 GiB, max 1 instance, Asia, fresh production database. |
 | RunPod | Bounded GPU relevance service. | Endpoint `0qcgjcclf6fln9`, container built from private source; first real passage and six synthetic jobs completed. One 16 GB GPU family; quoted runtime US$0.58/hour; max 1/active 0 workers; idle 5s; execution 120s. Region and actual completed-job usage remain to be recorded. |
-| GitHub | Public application source and CI; separate private GPU build input. | Public [Epsilon3096/SDC_Hackathon](https://github.com/Epsilon3096/SDC_Hackathon), anonymous access verified with eight commits through `71489cc`. All six [CI jobs](https://github.com/Epsilon3096/SDC_Hackathon/actions/runs/39939758010) passed. Private `Epsilon3096/shiftbridge-inference` remains repository-only build input. |
+| GitHub | Public application source and CI; separate private GPU build input. | Public [Epsilon3096/SDC_Hackathon](https://github.com/Epsilon3096/SDC_Hackathon), anonymous access verified with original history preserved through `f056cef`. All seven [CI jobs](https://github.com/Epsilon3096/SDC_Hackathon/actions/runs/39942612991) passed; per-job counts were not extracted from these logs. Private `Epsilon3096/shiftbridge-inference` remains repository-only build input. |
 | Local Windows + PGlite | Current development, tests and persisted demo. | Local execution; not cloud hosting. |
 
 ## 4. AI tools, models and datasets
@@ -65,7 +65,7 @@ No payment, recruitment, email, mapping or messaging APIs are called by the appl
 | --- | --- | --- | --- |
 | `BAAI/bge-large-en-v1.5` — build revision `d4aa6901d3a41ba39fb536a557fa166f842b0e09` | BAAI, configured for RunPod | Pretrained embedding relevance triage only; one live passage plus six synthetic cases completed; app accepted the real-passage result. No training/fine-tuning. | **Executed revision pinned; genuine job provenance recorded in `../RUNPOD_VERIFICATION.md`.** Final model-card/licence review remains required; these cases do not establish accuracy. |
 
-The model row records initial executed use under preprocessing contract v2. Replit flagged Transformers 4.57.6 and certifi dependency findings; remediation, a revised worker contract, container rebuild and renewed live verification are in progress. The original seven jobs do not verify the new dependency/contract revision. Retain genuine job evidence and complete the final licence review; no threshold calibration or general model accuracy is established. The Python worker uses PyTorch, Transformers, huggingface-hub, safetensors and the RunPod SDK; pinned direct versions are in `runpod/requirements.txt` and `runpod/Dockerfile`. These worker dependencies are separate from the npm inventory; transitive Python hashes are not yet frozen.
+The model row records initial executed use under preprocessing contract v2. The published source passed the Replit security scan with zero active/zero dismissed findings. Patched v3 worker `383eabc` is rebuilding after dependency/build failures and requires genuine CUDA proof. The original seven jobs do not verify the new runtime. Retain genuine job evidence and complete the final licence review; no threshold calibration or general model accuracy is established. The Python worker uses PyTorch, Transformers, huggingface-hub, safetensors and the RunPod SDK; pinned direct versions are in `runpod/requirements.txt` and `runpod/Dockerfile`. These worker dependencies are separate from the npm inventory; transitive Python hashes are not yet frozen.
 
 ### 4.2 Datasets
 
@@ -97,18 +97,18 @@ AI assistance contributed substantially to concept development, code, tests and 
 
 ## 5. Sponsor-provided resources
 
-**REQUIRED HUMAN ANSWER — Yes or No after checking actual credits, platform access, mentoring and data use.** The participant reported US$20 Replit and US$25 RunPod credits and authorised their use; RunPod setup is in progress. Confirm the source of those credits and any mentoring separately. Earlier Replit development and current endpoint preparation must be declared truthfully; a rejected earlier voucher does not determine funding provenance. Initial live GPU jobs completed; actual billed usage still needs provider inspection.
+**REQUIRED HUMAN ANSWER — Yes or No after checking actual credits, platform access, mentoring and data use.** The participant reported US$20 Replit and US$25 RunPod credits and authorised their use; RunPod setup is in progress. Confirm the source of those credits and any mentoring separately. Earlier Replit development and current endpoint preparation must be declared truthfully; a rejected earlier voucher does not determine funding provenance. Initial live GPU jobs completed; a later account check showed US$24.99 remaining and US$0/hour, with AutoPay disabled. This is not a per-job cost calculation.
 
 | Sponsor | Resource | How actually used |
 | --- | --- | --- |
-| Replit — sponsor funding status unconfirmed | Development platform / managed PostgreSQL | Earlier imported version and persistence test; no current production deployment. |
-| RunPod — credit provenance requires confirmation | Existing US$25 credit and serverless build setup | Private worker repository connected; endpoint container built; one real-passage and six synthetic jobs completed. Actual billed usage remains to be checked. |
+| Replit — sponsor funding status unconfirmed | Development platform / managed PostgreSQL | Published prototype, managed PostgreSQL and 24 independent HTTPS checks; current source and Replit verification are recorded above. |
+| RunPod — credit provenance requires confirmation | Existing US$25 credit and serverless build setup | Private worker repository connected; endpoint container built; one real-passage and six synthetic jobs completed. Account observation: US$24.99 remaining, US$0/hour and AutoPay disabled; no per-job cost claim. |
 | Other sponsor/mentor | **REQUIRED INPUT or None** | State actual resources and contribution without exposing codes, keys or contact details unnecessarily. |
 
 #### Essential or replaceable — maximum 100 words
 
 <!-- word-limit: T5 100 -->
-The application currently runs locally without sponsor services. Replit is the intended hosted environment; its runtime and PostgreSQL role are technically replaceable, although competition rules may still require its use. RunPod is planned for relevance triage and is not required for deterministic matching or manual review. Initial passage inference is verified. A failure must preserve published recommendations and never impersonate successful inference. This technical replaceability is not a claim of exemption from sponsor-use rules. Final platform obligations and genuine use evidence remain unresolved while final deployment verification is pending.
+Replit hosts the public application and managed PostgreSQL. Local execution remains possible. RunPod supplies bounded relevance triage and is separate from deterministic matching and manual review. Seven original v2 jobs completed; patched v3 execution remains pending. Failures preserve published recommendations and display their real status. Technical replaceability does not imply exemption from sponsor-use rules. Public HTTPS checks and historical GPU records establish specific platform use; final sponsor-rule review and participant declarations remain required.
 <!-- /word-limit -->
 
 ## 6. Security, privacy and responsible use
@@ -130,7 +130,7 @@ The six-skill model is incomplete, self-reported and not validated as occupation
 
 Research relevance does not prove deployment or changed duties. Exact passages, recorded human interpretation, role scope and separate publication constrain evidence changes. Rejection preserves accepted plans; corrections create new snapshots. Older unscoped rules are explicitly labelled rather than silently rewritten.
 
-Seven initial GPU jobs completed, but model accuracy and threshold calibration remain unmeasured. Recorded timings are single-run observations, not a latency benchmark. The live feed may fail or return insufficient evidence; previous reviewed state remains readable. Learning times are team estimates; credentials and optional tools are outside the displayed learning cost. Completion records activity rather than competence. Automated tests and developer rehearsals do not substitute for independent worker validation, usability measurement or a complete security/accessibility audit.
+Seven v2 GPU jobs completed; patched v3 execution remains pending. Accuracy and calibration remain unmeasured. Timings are single-run observations. The live feed may fail or return insufficient evidence; previous reviewed state remains readable. Learning times are team estimates; credentials and optional tools are outside the displayed learning cost. Completion records activity rather than competence. Automated tests and developer rehearsals do not substitute for independent worker validation, usability measurement or a complete security/accessibility audit.
 <!-- /word-limit -->
 
 ## 7. Compliance and readiness checklist
@@ -142,7 +142,7 @@ Seven initial GPU jobs completed, but model accuracy and threshold calibration r
 | No credentials exposed | No credentials are included in these drafts. Final source/repository/recording needs a secret scan and visual check. |
 | AI development use disclosed and reviewed by team | Major use disclosed; human review/ownership confirmation pending. |
 | Sponsor use declared | Earlier platform use described; credit provenance/mentoring confirmation and completed platform proof pending. |
-| Prototype accessible through provided links | **Not complete.** Public source access is verified. Production deployment remains blocked by dependency-security remediation. |
+| Prototype accessible through provided links | Public source and prototype access are verified. Patched v3 GPU verification and the final video link remain outstanding. |
 | All fields complete within limits | Limited responses fit; required participant/external inputs and signatures remain. |
 
 ## 8. Declaration

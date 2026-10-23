@@ -1,4 +1,6 @@
-# First completed GPU request — 23 October 2026
+# Historical v2 GPU verification — 23 October 2026
+
+These records describe the original v2 worker. The patched v3 worker is rebuilding and has not yet produced a verified CUDA result. Preserve the job IDs, scores and runtime labels exactly as recorded.
 
 The RunPod worker container built successfully from private repository `Epsilon3096/shiftbridge-inference`, commit `5ddfef5b7f553d6e1d1b9618fcaf9f6e4f007598`. Endpoint `0qcgjcclf6fln9` reached Ready. The first request used a bounded public Intel inspection passage; it did not send a worker profile, qualification, plan or employer record.
 
@@ -18,7 +20,7 @@ The RunPod worker container built successfully from private repository `Epsilon3
 
 The fixed query was: “Industrial manufacturing quality inspection: visual defect detection, automated optical inspection, inspection records, measurement and root cause analysis.” The exact non-secret provider JSON is retained in [runpod-first-job-2026-10-23.json](evidence/runpod-first-job-2026-10-23.json). No API key is included.
 
-This establishes one completed provider request and the returned model provenance. Application polling accepted the matching result and displayed similarity 0.603 for the current model context. The timings describe this single request and do not establish typical latency or measured total charge. `cuda` is returned software provenance, not independent hardware attestation. Provider usage/balance inspection remains outstanding. The six-case evaluation completed as recorded below.
+This establishes one completed provider request and the returned model provenance. Application polling accepted the matching result and displayed similarity 0.603 for the then-current v2 model context. The timings describe this single request and do not establish typical latency or measured total charge. `cuda` is returned software provenance, not independent hardware attestation. A later provider balance check showed US$24.99 remaining and US$0/hour with AutoPay disabled; this is an account observation, not a per-job billed-cost calculation. The six-case evaluation completed as recorded below.
 
 The score is **not accuracy, probability, evidence strength, workforce readiness or employment likelihood**. There is no universal 0.65 acceptance threshold. A relevant passage can receive a score below that arbitrary value. Similarity only helps organise a reviewer's reading; the source passage, human interpretation, role scope, approval and separate publication are still required. This request did not itself change a published snapshot or accepted plan.
 

@@ -4,15 +4,15 @@ A workforce learning planner for Malaysian manufacturing quality inspectors, bui
 
 The HTML produced during ideation is a separate design reference. This directory is the actual application.
 
-[Public source repository](https://github.com/Epsilon3096/SDC_Hackathon) · [Verified CI run](https://github.com/Epsilon3096/SDC_Hackathon/actions/runs/39939758010)
+[Live prototype](https://shift-bridge-kingyang3096.replit.app) · [Public source repository](https://github.com/Epsilon3096/SDC_Hackathon) · [Verified CI run](https://github.com/Epsilon3096/SDC_Hackathon/actions/runs/39942612991)
 
 [![Verify ShiftBridge](https://github.com/Epsilon3096/SDC_Hackathon/actions/workflows/verify.yml/badge.svg)](https://github.com/Epsilon3096/SDC_Hackathon/actions/workflows/verify.yml)
 
-Anonymous repository access and all six CI jobs passed at commit `71489cc`, with eight commits preserved. Public app publishing awaits dependency-security remediation and rescanning; no live demo URL is claimed yet.
+The public prototype passed 24 independent HTTPS checks, including matching assets, managed PostgreSQL, save/read-back, visitor isolation and denied anonymous GPU requests. All seven CI jobs passed at `f056cef`. The patched GPU worker is still rebuilding; the seven recorded v2 jobs are historical evidence, not verification of the new runtime.
 
 ## Three-minute judge orientation
 
-Run `npm ci`, then `npm run dev`, and open `http://127.0.0.1:5173`. No API key is needed for the synthetic planning walkthrough. Start **Guided demo** for the constructed Farid case, inspect the Intel passage, and follow the review, publication and explicit adoption milestones.
+Open the live prototype above, or run `npm ci` then `npm run dev` and open `http://127.0.0.1:5173`. No API key is needed for the synthetic planning walkthrough. Start **Guided demo** for the constructed Farid case, inspect the Intel passage, and follow the review, publication and explicit adoption milestones.
 
 | Page | What to inspect |
 | --- | --- |
@@ -41,11 +41,11 @@ No key or external database is required locally. PGlite runs embedded PostgreSQL
 
 `npm test` runs domain, API and connector tests. `npm run build` checks TypeScript and builds the client. `npm start` serves the built client and API together. `npm run ingest` performs a real read-only arXiv fetch/validation probe; use Evidence Studio to save fetched articles in a workspace.
 
-`npm run verify` runs the test suite, production build and built-app smoke check. All six jobs in the linked CI run passed: four Windows/Linux and Node 22/24 jobs, the 11-test Python worker job, and the PostgreSQL 17 job with all 11 database/configuration checks, including the three real-PostgreSQL checks skipped by default locally. See `docs/OPERATIONS.md` for the exact checks and real-data pilot gates.
+`npm run verify` runs the test suite, production build and built-app smoke check. All seven jobs in the linked CI run passed: four Windows/Linux and Node 22/24 jobs, worker contract tests, real PostgreSQL integration, and strict worker/PyTorch dependency audits. Individual counts were not extracted from these CI logs; the recorded local/Replit counts are separate. See `docs/OPERATIONS.md` for the exact checks and real-data pilot gates.
 
 ## Submission materials
 
-`docs/submission/README.md` indexes the Console proposal, technical declaration, requirements-to-proof matrix, 6:40 recording script, deck copy, dependency inventory and blank evaluation sheet. All eight bounded template responses have reproducible word checks. Required human declarations, baseline evidence and public links remain clearly marked. Private contact details and signed forms do not belong in this public source directory.
+`docs/submission/README.md` indexes the Console proposal, technical declaration, requirements-to-proof matrix, 6:40 recording script, deck copy, dependency inventory and blank evaluation sheet. All eight bounded template responses have reproducible word checks. Required human declarations, baseline evidence and the final video link remain clearly marked. Private contact details and signed forms do not belong in this public source directory.
 
 Gemini provided ideas-only reviews on 21 and 23 October. Three intervening attempts on 22 October failed. The successful follow-up led to voluntary practice-to-plan navigation and a clearer warning about negated or vocabulary-matching passages; no code was requested. Accepted changes and rejected overclaims are documented in `docs/GEMINI_REVIEW.md`. This remains a synthetic demonstration, with one application-accepted live GPU result and a six-case synthetic triage smoke evaluation; no commercial deployment is claimed.
 
@@ -62,11 +62,11 @@ Gemini provided ideas-only reviews on 21 and 23 October. Three intervening attem
 - Learning blocks combine public resources and team-authored practice estimates. Completing a step does not award a qualification or increase proficiency automatically.
 - No measured employment, wage, emissions or planning-time result is claimed.
 - Real arXiv refresh may fail; the previous reviewed state remains available. Research is not deployment evidence.
-- RunPod relevance triage is separate from deterministic planning. The worker container built successfully; the app accepted a completed Intel-passage GPU result, and six declared synthetic cases completed. These establish execution and a tiny ranking smoke result, not general accuracy. Failed, unavailable and uncertain requests are visible; no simulated score is presented as live inference.
+- RunPod relevance triage is separate from deterministic planning. Under the earlier v2 contract, the worker container built successfully, the app accepted a completed Intel-passage GPU result, and six declared synthetic cases completed. The patched v3 worker is rebuilding and still needs a genuine CUDA result. These establish execution and a tiny ranking smoke result, not general accuracy. Failed, unavailable and uncertain requests are visible; no simulated score is presented as live inference.
 
 ## Replit
 
-Development and platform setup are proceeding within the participant's existing US$20 Replit and US$25 RunPod credits. Replit commit `423bf15`, including the practice-navigation and warning improvements, passed 257 tests with three optional PostgreSQL tests skipped, the production build and built-app smoke. The Autoscale target change from `71489cc` was then applied. A RunPod queue endpoint was created from the private worker repository and its container built successfully. A completed Intel-passage GPU result was accepted by the app and six synthetic triage jobs completed. Public application deployment is blocked by the dependency-security review described in `docs/DEPLOYMENT.md`; remediation and rescanning remain pending. Keeping source in Replit is not, by itself, verified competition proof of use.
+Development and platform setup are proceeding within the participant's existing US$20 Replit and US$25 RunPod credits. Replit commit `f056cef` passed 257 tests with three optional PostgreSQL tests skipped, the production build and built-app smoke. Its security scan reported zero active and zero dismissed findings, and publication succeeded. A RunPod queue endpoint was created from the private worker repository and its container built successfully. A completed Intel-passage GPU result was accepted by the app and six synthetic triage jobs completed. The live application passed 24 HTTPS checks. Patched GPU-runtime validation remains separate and pending as described in `docs/DEPLOYMENT.md`. Keeping source in Replit is not, by itself, verified competition proof of use.
 
 The 23 October local checkpoint passed 257 application tests, with three optional real-PostgreSQL tests skipped, plus TypeScript checking, the production build, built-app smoke test and 11 offline Python worker tests. See `docs/BUILD_STATUS.md` for dated evidence and remaining release gates. Scan source with `python scripts/package-release.py --scan-only`; after committing verified source, create a new archive with `python scripts/package-release.py --output ../ShiftBridge_Replit_Source_23Oct.zip`.
 

@@ -74,7 +74,7 @@ Presenter note: source readings support the exercise; completion does not certif
 - Reproducible tests and desktop/mobile browser checks.
 - Source/role scope, uncertainty and separate adoption remain visible.
 
-Small honest status: **Initial GPU inference verified; final hosting unverified. User-impact baseline not measured.**
+Small honest status: **Public web prototype verified. Historical v2 GPU results recorded; patched v3 verification pending. User-impact baseline not measured.**
 
 Architecture strip: React/TypeScript → Fastify → PostgreSQL; arXiv ingestion; RunPod embedding triage labelled **one public passage and six synthetic cases completed; wider quality unmeasured**. Update the actual deck from this copy only after checking final platform status; the earlier rendered deck remains a draft.
 
@@ -84,8 +84,8 @@ Presenter note: insert the actual final test count/log if desired. Do not reuse 
 
 **SDG 4.4: relevant technical skills. SDG 4.3: affordable learning access.**
 
-Next evidence: independent synthetic-task usability baseline, intended-worker/adviser feedback and a verified final deployment. Draft pilot target: 30% lower median planning time without lower task correctness; **not an achieved result**.
+Next evidence: independent synthetic-task usability baseline, intended-worker/adviser feedback and continued deployment checks and patched GPU verification. Draft pilot target: 30% lower median planning time without lower task correctness; **not an achieved result**.
 
-**[Prototype verification pending] · [Public source repository](https://github.com/Epsilon3096/SDC_Hackathon) · Console · Tan King Yang · UTAR**
+**[Live prototype](https://shift-bridge-kingyang3096.replit.app) · [Public source repository](https://github.com/Epsilon3096/SDC_Hackathon) · Console · Tan King Yang · UTAR**
 
 Footer: Codex provided substantial assistance; Gemini provided strategic critique. The participant team owns the entry, understands the implementation and signs the declarations. Confirm that human ownership before presenting it as completed.
