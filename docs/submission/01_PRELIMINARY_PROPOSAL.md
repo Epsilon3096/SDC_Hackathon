@@ -1,6 +1,6 @@
 # SDC 2026 Phase 1 Preliminary Project Proposal — ShiftBridge
 
-Draft text updated 23 October 2026; the earlier rendered PDF must be regenerated before final submission. Copy into the official proposal template and export as `SDC2026_Console_Preliminary.pdf`. The numbered responses follow every field in the supplied template. Text marked **REQUIRED INPUT** must be completed by the participant; this unsigned draft is not a completed submission. Replit and RunPod setup has resumed; the public app is verified and original v2 inference is recorded. Patched v3 GPU verification remains pending.
+Unsigned draft updated 23 October 2026. Verify the final rendered copy before submission. Copy into the official proposal template and export as `SDC2026_Console_Preliminary.pdf`. The numbered responses follow every field in the supplied template. Text marked **REQUIRED INPUT** must be completed by the participant; this unsigned draft is not a completed submission. Replit and RunPod setup has resumed; the public app is verified and original v2 inference is recorded. Patched v3 GPU execution and hosted application acceptance are verified.
 
 ## 1. Team and project overview
 
@@ -36,11 +36,11 @@ ShiftBridge connects skills, evidence, role comparison and an affordable learnin
 
 The evidence layer can refresh arXiv research metadata and retains source links, dates and content hashes. A reviewer must identify a supporting passage, explain its task implication, select affected roles and propose bounded scenario adjustments. Approval and publication are separate. Unsupported or irrelevant items leave the accepted plan unchanged.
 
-The intended runtime AI component is an embedding model for relevance triage on public source passages. A RunPod adapter exists, but the model has not been deployed or executed live. The present working prototype uses manual evidence review; it does not describe deterministic ranking as model inference. Relevance alone will never prove a workforce implication or publish a rule.
+The runtime AI component is a pinned embedding model for relevance triage on bounded public passages. The hosted app accepted a completed TalentCorp request from the patched RunPod worker; six synthetic smoke cases also completed. Human evidence review remains separate from deterministic planning. Similarity cannot establish deployment, workforce implications or a valid skill rule. A negated-vocabulary case illustrates that limit.
 
 The planner orders learning prerequisites, accounts for known access prices and weekly time, and shows practical outputs. Every role and skill has an SDG explanation. Moderate and faster adoption scenarios expose assumptions rather than promise forecasts. A published change can visibly reorder learning; the worker chooses whether to adopt it. Saved decisions retain the original profile, assessment and evidence version and can be downloaded.
 
-Workshop themes reflected in the architecture include API integration, PostgreSQL persistence and deployment configuration. Actual workshop attendance requires team confirmation. AI-assisted development is disclosed separately from runtime AI. Original relevance inference and public hosting are verified; patched GPU execution and wider model evaluation remain active tasks.
+Workshop themes reflected in the architecture include API integration, PostgreSQL persistence and deployment configuration. Actual workshop attendance requires team confirmation. AI-assisted development is disclosed separately from runtime AI. Public hosting and patched GPU execution are verified; representative model evaluation remains outstanding.
 <!-- /word-limit -->
 
 ## 3. Technical architecture and implementation plan
@@ -54,8 +54,8 @@ Workshop themes reflected in the architecture include API integration, PostgreSQ
 | Planning | Shared TypeScript engine 1.1.0; normalized selected-skill coverage, role-scoped evidence, qualification checks, prerequisite-aware starter planning. |
 | Storage | PostgreSQL JSONB workspace records with transactional changes; PGlite for local persistence, `pg` for managed PostgreSQL. This build does not use a multi-table ORM architecture. |
 | Updatable source | arXiv Atom API with category RSS fallback. Manual refresh is real; a fetched paper is a candidate, not approved labour evidence. |
-| AI integration, initial execution verified | RunPod endpoint and executable worker for `BAAI/bge-large-en-v1.5` relevance triage. Model revision is pinned in the contract; the app accepted a completed Intel-passage result and six declared synthetic cases completed. Wider relevance evaluation remains outstanding. |
-| Hosting, verified public prototype | [https://shift-bridge-kingyang3096.replit.app](https://shift-bridge-kingyang3096.replit.app). Replit `f056cef` passed tests/build/smoke and 24 independent HTTPS checks passed. |
+| AI integration, initial execution verified | RunPod endpoint and executable worker for `BAAI/bge-large-en-v1.5` relevance triage. Model revision is pinned in the contract; the hosted app accepted a v3 TalentCorp result and six declared v3 synthetic cases completed. Wider relevance evaluation remains outstanding. |
+| Hosting, verified public prototype | [https://shift-bridge-kingyang3096.replit.app](https://shift-bridge-kingyang3096.replit.app). Published `45bfed5` (r4) passed 24 HTTPS checks; earlier Replit `f056cef` passed tests/build/smoke. |
 | Verification | Vitest domain/API/connector/client-helper tests, TypeScript checking, production build and recorded browser checks. |
 
 ```text
@@ -64,7 +64,7 @@ Synthetic profile + study constraints ────────────┐
 arXiv refresh → dated candidate → human review → published snapshot
                     │                  │                  │
                     └→ AI triage       └→ reject/no change │
-                       [DEFERRED]                         v
+                       [LIVE GPU]                         v
                           Deterministic role comparison + scenario assumptions
                                                 │
                                                 v
@@ -74,7 +74,7 @@ arXiv refresh → dated candidate → human review → published snapshot
                           PostgreSQL saved decision → downloadable text brief
 ```
 
-**Official sponsor API or cloud use:** an earlier Replit development workspace and managed PostgreSQL were exercised; this does not prove current production hosting or sponsor-funded use. RunPod has not been configured. **REQUIRED INPUT — team confirms all sponsor credits, mentoring and resources actually used and provides genuine evidence later.** No exemption from event platform requirements is asserted.
+**Official sponsor API or cloud use:** Replit hosts the verified public app and managed PostgreSQL. RunPod executed bounded public-passage triage under the current v3 contract, with application acceptance and a six-case smoke evaluation recorded. **REQUIRED INPUT — team confirms the provenance of credits, mentoring and every resource actually used.** Platform execution does not establish sponsor funding or an exemption from event requirements.
 
 ### 3.2 Design-thinking and deployment strategy — maximum 200 words
 
@@ -85,7 +85,7 @@ The prototype allows profile edits, scenario comparison, evidence inspection and
 
 Implementation verification covers scoring, unknowns, prerequisites, review/publication separation, historical preservation and database persistence. Browser checks exercise the real API at desktop and mobile widths. A small independent usability study is planned to compare selecting a justified next step with a static catalogue versus ShiftBridge; no measured improvement is claimed.
 
-Before submission, the team must finish ownership review, validate the problem with intended users, complete the impact baseline and prepare the final video. The public app passed 24 HTTPS checks. Original v2 inference is recorded; patched v3 GPU verification remains pending. Final declarations must distinguish these checkpoints and retain the remaining limitations.
+Before submission, the team must finish ownership review, validate the problem with intended users, complete the impact baseline and prepare the final video. The public app passed 24 HTTPS checks. Original v2 inference and patched v3 hosted application acceptance are recorded. Final declarations must distinguish these checkpoints and retain the remaining limitations.
 <!-- /word-limit -->
 
 ## 4. Preliminary environmental and SDG impact framework
@@ -107,7 +107,7 @@ Do not transfer these as checked boxes until the leader confirms the condition.
 | --- | --- |
 | All members completed mandatory GenAI, Database and Cloud Deployment workshops | **REQUIRED HUMAN CONFIRMATION.** Reviewed materials conflict on attendance wording; actual attendance and latest official instruction must be established. |
 | Concept addresses a verified real-world problem directly mapped to SDGs | Public evidence supports the task context; the specific user difficulty still needs team validation. Leader confirms the final statement after reviewing [S1–S2]. |
-| Solution targets a functional, deployed application | Public prototype https://shift-bridge-kingyang3096.replit.app passed 24 independent HTTPS checks. Patched GPU verification and final participant review remain pending. |
+| Solution targets a functional, deployed application | Public prototype https://shift-bridge-kingyang3096.replit.app passed 24 independent HTTPS checks. GPU execution is verified; final participant review remains pending. |
 | Every template field is complete and within limits | Limited responses fit their stated maxima; required identity, baseline, declarations and signatures remain incomplete. |
 
 ## 6. IP and originality declaration

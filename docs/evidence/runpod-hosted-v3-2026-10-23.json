@@ -1,0 +1,58 @@
+{
+  "capturedAt": "2026-10-23T11:17:34.899676+00:00",
+  "requestMethod": "GET",
+  "submissionPerformedByThisPoller": false,
+  "jobId": "d9392505-f3e3-45ad-974e-e21fcc206fae-e2",
+  "expectedContext": {
+    "model": "BAAI/bge-large-en-v1.5",
+    "revision": "d4aa6901d3a41ba39fb536a557fa166f842b0e09",
+    "query": "Industrial manufacturing quality inspection: visual defect detection, automated optical inspection, inspection records, measurement and root cause analysis.",
+    "preprocessing": "bge-cls-l2-512-bounded2000-v3",
+    "device": "cuda",
+    "source_hash": "53e62d3b865a72685afb6dac293a00724f67077c55a79ecfa081af507e7235ac",
+    "text_hash": "d122ac2eb476d8ec6d47d74ed0608cf282921a90a0adfcff959645b391ee93a2"
+  },
+  "checks": {
+    "model": true,
+    "revision": true,
+    "query": true,
+    "preprocessing": true,
+    "device": true,
+    "source_hash": true,
+    "text_hash": true,
+    "providerJobId": true,
+    "finiteCosine": true
+  },
+  "contextAccepted": true,
+  "statusObservations": [
+    {
+      "at": "2026-10-23T11:14:16.651891+00:00",
+      "status": "IN_QUEUE"
+    },
+    {
+      "at": "2026-10-23T11:17:19.691944+00:00",
+      "status": "IN_PROGRESS"
+    },
+    {
+      "at": "2026-10-23T11:17:34.899676+00:00",
+      "status": "COMPLETED"
+    }
+  ],
+  "providerResponse": {
+    "delayTime": 304704,
+    "executionTime": 4053,
+    "id": "d9392505-f3e3-45ad-974e-e21fcc206fae-e2",
+    "output": {
+      "device": "cuda",
+      "model": "BAAI/bge-large-en-v1.5",
+      "preprocessing": "bge-cls-l2-512-bounded2000-v3",
+      "query": "Industrial manufacturing quality inspection: visual defect detection, automated optical inspection, inspection records, measurement and root cause analysis.",
+      "revision": "d4aa6901d3a41ba39fb536a557fa166f842b0e09",
+      "score": 0.5877708196640015,
+      "source_hash": "53e62d3b865a72685afb6dac293a00724f67077c55a79ecfa081af507e7235ac",
+      "text_hash": "d122ac2eb476d8ec6d47d74ed0608cf282921a90a0adfcff959645b391ee93a2"
+    },
+    "status": "COMPLETED",
+    "workerId": "qcst3m5bb6945l"
+  }
+}

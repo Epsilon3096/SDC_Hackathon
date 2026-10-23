@@ -1,0 +1,133 @@
+{
+  "verifiedAtUtc": "2026-10-23T11:25:09.297443+00:00",
+  "url": "https://shift-bridge-kingyang3096.replit.app",
+  "mode": "public-https-isolated-visitor-smoke",
+  "checks": [
+    {
+      "name": "HTTPS production application shell",
+      "passed": true,
+      "status": 200
+    },
+    {
+      "name": "Browser response protections",
+      "passed": true
+    },
+    {
+      "name": "Built JavaScript and CSS references",
+      "passed": true
+    },
+    {
+      "name": "Published bundle asset",
+      "passed": true,
+      "asset": "/assets/index-H8G2efrL.js",
+      "status": 200
+    },
+    {
+      "name": "Published asset matches verified local build",
+      "passed": true,
+      "asset": "/assets/index-H8G2efrL.js"
+    },
+    {
+      "name": "Published bundle asset",
+      "passed": true,
+      "asset": "/assets/index--QEEq3YX.css",
+      "status": 200
+    },
+    {
+      "name": "Published asset matches verified local build",
+      "passed": true,
+      "asset": "/assets/index--QEEq3YX.css"
+    },
+    {
+      "name": "Public synthetic practice data",
+      "passed": true,
+      "status": 200
+    },
+    {
+      "name": "Public third-party notices",
+      "passed": true,
+      "status": 200
+    },
+    {
+      "name": "Missing API uses JSON 404",
+      "passed": true,
+      "status": 404
+    },
+    {
+      "name": "Deployed managed PostgreSQL connection",
+      "passed": true,
+      "database": "postgres"
+    },
+    {
+      "name": "Current v3 inference contract",
+      "passed": true
+    },
+    {
+      "name": "State is not cacheable",
+      "passed": true
+    },
+    {
+      "name": "Secure HttpOnly SameSite Strict session cookie",
+      "passed": true
+    },
+    {
+      "name": "Fresh visitor has no saved plans",
+      "passed": true
+    },
+    {
+      "name": "No elevated reviewer session",
+      "passed": true
+    },
+    {
+      "name": "Save a fictional visitor plan",
+      "passed": true,
+      "status": 200
+    },
+    {
+      "name": "Saved plan survives a new HTTP read",
+      "passed": true
+    },
+    {
+      "name": "Independent visitor isolation",
+      "passed": true
+    },
+    {
+      "name": "Cross-origin mutation denied",
+      "passed": true,
+      "status": 403
+    },
+    {
+      "name": "Cross-site mutation denied",
+      "passed": true,
+      "status": 403
+    },
+    {
+      "name": "Anonymous GPU request denied before source lookup",
+      "passed": true,
+      "status": 403
+    },
+    {
+      "name": "Denied GPU request creates no inference record",
+      "passed": true
+    },
+    {
+      "name": "Security boundary tests preserve the saved plan",
+      "passed": true
+    }
+  ],
+  "success": true,
+  "scope": "Fresh visitor cookies and seeded fictional workers only. One saved plan in this test visitor workspace. No reviewer credentials, source refresh, publication, or paid inference request authorized.",
+  "limits": "No browser visual/accessibility check, process-restart or backup restoration test, complete security assessment, or genuine GPU validation.",
+  "connection": {
+    "database": "postgres",
+    "runpod": true,
+    "reviewMode": "demo",
+    "adminConfigured": true
+  },
+  "modelContext": {
+    "model": "BAAI/bge-large-en-v1.5",
+    "modelRevision": "d4aa6901d3a41ba39fb536a557fa166f842b0e09",
+    "preprocessing": "bge-cls-l2-512-bounded2000-v3",
+    "query": "Industrial manufacturing quality inspection: visual defect detection, automated optical inspection, inspection records, measurement and root cause analysis."
+  }
+}
