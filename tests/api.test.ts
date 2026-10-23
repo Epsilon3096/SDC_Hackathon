@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os';
 import { buildApp } from '../src/server/app';
 import { hash, Store } from '../src/server/store';
 import { createPlan, skillMultiplier } from '../src/shared/engine';
-import type { AppState, Mapping, Plan, Profile, Snapshot } from '../src/shared/types';
+import { cacheKey, inferenceText, MODEL, PREPROCESSING, RELEVANCE_QUERY } from '../src/server/connectors';
+import type { AppState, Inference, Mapping, Plan, Profile, Snapshot, Source } from '../src/shared/types';
 
 type App = Awaited<ReturnType<typeof buildApp>>;
 let store: Store;
@@ -132,7 +133,7 @@ describe('profile persistence, isolation and optimistic writes', () => {
       if (dirname(target) !== temporaryRoot || !basename(target).startsWith('shiftbridge-persistence-')) throw new Error('Unexpected persistence-test path; refusing cleanup.');
       await rm(target, { recursive: true, force: true });
     }
-  });
+  }, 15000);
 });
 
 describe('saved plans and prerequisite progress', () => {
@@ -488,6 +489,7 @@ describe('review and publication boundaries', () => {
       expect(otherState.mappings.find(m => m.id === 'mapping-intel-ai-literacy')?.status).toBe('pending');
       expect((await demo.inject({ method: 'POST', url: '/api/inference/intel-inline-2023', headers: json(first.cookie), payload: {} })).statusCode).toBe(403);
       expect((await demo.inject({ method: 'POST', url: '/api/inference-status/any-job', headers: json(first.cookie), payload: {} })).statusCode).toBe(403);
+      expect((await demo.inject({ method: 'POST', url: '/api/inference-reconcile/any-job', headers: json(first.cookie), payload: { jobId: 'test-job' } })).statusCode).toBe(403);
       expect(fake).not.toHaveBeenCalled();
     } finally { await demo.close(); }
   });
@@ -548,6 +550,185 @@ describe('review and publication boundaries', () => {
       expect(inference.json()).toMatchObject({ status: 'unconfigured', mode: 'none', score: null });
       expect(fake).not.toHaveBeenCalled();
       expect((await state(app, current.cookie)).activeSnapshotId).toBe(current.state.activeSnapshotId);
+    } finally { await app.close(); }
+  });
+});
+
+describe('paid inference reservations and reconciliation', () => {
+  const runpod = { key: 'test-only-key', endpoint: 'test-endpoint', revision: 'a'.repeat(40) };
+  const completedResponse = (source: Source, jobId = 'test-job') => new Response(JSON.stringify({ id: jobId, status: 'COMPLETED', output: { score: 0.72, source_hash: source.hash, text_hash: hash(inferenceText(source)), model: MODEL, revision: runpod.revision, query: RELEVANCE_QUERY, preprocessing: PREPROCESSING, device: 'cuda' } }));
+  const submit = (app: App, cookie: string, sourceId = 'intel-inline-2023') => app.inject({ method: 'POST', url: '/api/inference/' + sourceId, headers: json(cookie), payload: {} });
+
+  it('rejects empty source text and synthetic evidence before reserving or paying for a job', async () => {
+    const fake = vi.fn<typeof fetch>(); const app = await buildApp({ store, localReviewer: true, runpod, fetcher: fake });
+    try {
+      const current = await session(app);
+      expect((await submit(app, current.cookie, 'patchcore-research')).statusCode).toBe(422);
+      expect((await submit(app, current.cookie, 'synthetic-chatbot')).statusCode).toBe(422);
+      expect(fake).not.toHaveBeenCalled();
+      expect((await state(app, current.cookie)).inferences).toEqual([]);
+    } finally { await app.close(); }
+  });
+
+  it('reserves in the database before submission and prevents another server from spending on the same request', async () => {
+    let release!: (response: Response) => void; let started!: () => void;
+    const held = new Promise<Response>(resolve => { release = resolve; });
+    const requested = new Promise<void>(resolve => { started = resolve; });
+    const fake = vi.fn<typeof fetch>(async () => { started(); return held; });
+    const first = await buildApp({ store, localReviewer: true, runpod, fetcher: fake });
+    const second = await buildApp({ store, localReviewer: true, runpod, fetcher: fake });
+    try {
+      const current = await session(first);
+      const inflight = submit(first, current.cookie).then(response => response);
+      await requested;
+      const reservation = (await state(second, current.cookie)).inferences[0];
+      expect(reservation).toMatchObject({ status: 'submitting', jobId: null, endpointId: runpod.endpoint, preprocessing: PREPROCESSING, query: RELEVANCE_QUERY, textHash: hash(inferenceText(current.state.sources.find(source => source.id === reservation.sourceId)!)), sourceHash: current.state.sources.find(source => source.id === reservation.sourceId)!.hash });
+      expect(reservation.attemptId).toBeTruthy();
+      const duplicate = await submit(second, current.cookie);
+      expect(duplicate.statusCode).toBe(200);
+      expect(duplicate.json()).toMatchObject({ id: reservation.id, status: 'submitting', attemptId: reservation.attemptId });
+      expect(fake).toHaveBeenCalledTimes(1);
+      release(new Response(JSON.stringify({ id: 'test-job', status: 'IN_QUEUE' })));
+      expect((await inflight).json()).toMatchObject({ status: 'pending', jobId: 'test-job', attemptId: reservation.attemptId });
+      expect((await submit(second, current.cookie)).json()).toMatchObject({ status: 'pending', jobId: 'test-job' });
+      expect(fake).toHaveBeenCalledTimes(1);
+    } finally { release(new Response(JSON.stringify({ id: 'test-job', status: 'IN_QUEUE' }))); await first.close(); await second.close(); }
+  });
+
+  it('retains an ambiguous submission across a server restart and never retries it automatically', async () => {
+    const fake = vi.fn<typeof fetch>().mockRejectedValue(new Error('Ambiguous transport failure after possible provider acceptance'));
+    const first = await buildApp({ store, localReviewer: true, runpod, fetcher: fake });
+    const restarted = await buildApp({ store, localReviewer: true, runpod, fetcher: fake });
+    try {
+      const current = await session(first);
+      const result = await submit(first, current.cookie);
+      expect(result.statusCode).toBe(200);
+      expect(result.json()).toMatchObject({ status: 'unknown', score: null, jobId: null });
+      expect(result.json().error).toContain('duplicate charges');
+      expect((await submit(restarted, current.cookie)).json()).toMatchObject({ id: result.json().id, status: 'unknown', attemptId: result.json().attemptId });
+      expect(fake).toHaveBeenCalledTimes(1);
+      expect((await state(restarted, current.cookie)).snapshots).toEqual(current.state.snapshots);
+    } finally { await first.close(); await restarted.close(); }
+  });
+
+  it('exposes the current comparison context and preserves results from another model revision', async () => {
+    const newerRunpod = { ...runpod, revision: 'b'.repeat(40) };
+    const fake = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({ id: 'new-job', status: 'IN_QUEUE' })));
+    const previous = await buildApp({ store, localReviewer: true, runpod, fetcher: fake });
+    const current = await buildApp({ store, localReviewer: true, runpod: newerRunpod, fetcher: fake });
+    try {
+      const first = await session(previous); const source = first.state.sources.find(item => item.id === 'intel-inline-2023')!;
+      const oldResult: Inference = { id: cacheKey(source, runpod), sourceId: source.id, status: 'completed', mode: 'live', score: 0.72, model: MODEL, modelRevision: runpod.revision, jobId: 'old-job', createdAt: new Date().toISOString(), error: null, preprocessing: PREPROCESSING, query: RELEVANCE_QUERY, textHash: hash(inferenceText(source)), sourceHash: source.hash };
+      await store.mutate(hash(first.cookie.split('=')[1]), saved => { saved.inferences = [oldResult]; });
+      expect((await state(current, first.cookie)).connection.runpodContext).toEqual({ model: MODEL, modelRevision: newerRunpod.revision, preprocessing: PREPROCESSING, query: RELEVANCE_QUERY });
+      const response = await submit(current, first.cookie);
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toMatchObject({ id: cacheKey(source, newerRunpod), status: 'pending', modelRevision: newerRunpod.revision });
+      expect((await state(current, first.cookie)).inferences).toContainEqual(oldResult);
+      expect((await state(current, first.cookie)).inferences).toHaveLength(2);
+      expect(fake).toHaveBeenCalledTimes(1);
+    } finally { await previous.close(); await current.close(); }
+  });
+
+  it('enriches a legacy result only when its full key matches, and blocks contradictory saved context without spending', async () => {
+    const fake = vi.fn<typeof fetch>(); const app = await buildApp({ store, localReviewer: true, runpod, fetcher: fake });
+    try {
+      const current = await session(app); const source = current.state.sources.find(item => item.id === 'intel-inline-2023')!;
+      const legacy: Inference = { id: cacheKey(source, runpod), sourceId: source.id, status: 'completed', mode: 'live', score: 0.72, model: MODEL, modelRevision: runpod.revision, jobId: 'old-job', createdAt: new Date().toISOString(), error: null };
+      const workspace = hash(current.cookie.split('=')[1]);
+      await store.mutate(workspace, saved => { saved.inferences = [legacy]; });
+      expect((await submit(app, current.cookie)).json()).toMatchObject({ status: 'completed', mode: 'cached', score: 0.72, preprocessing: PREPROCESSING, query: RELEVANCE_QUERY, textHash: hash(inferenceText(source)), sourceHash: source.hash });
+      const enriched = (await state(app, current.cookie)).inferences[0];
+      expect(enriched).toMatchObject({ id: legacy.id, preprocessing: PREPROCESSING, query: RELEVANCE_QUERY });
+      await store.mutate(workspace, saved => { saved.inferences[0].preprocessing = 'another-encoder'; });
+      const invalid = await submit(app, current.cookie);
+      expect(invalid.statusCode).toBe(409);
+      expect(invalid.json().error).toContain('context is inconsistent');
+      expect((await state(app, current.cookie)).inferences[0].preprocessing).toBe('another-encoder');
+      expect(fake).not.toHaveBeenCalled();
+    } finally { await app.close(); }
+  });
+
+  it('keeps stale submission reservations blocked and preserves every record at the ledger limit', async () => {
+    const fake = vi.fn<typeof fetch>(); const app = await buildApp({ store, localReviewer: true, runpod, fetcher: fake });
+    try {
+      const current = await session(app); const workspace = hash(current.cookie.split('=')[1]);
+      const source = current.state.sources.find(item => item.id === 'intel-inline-2023')!;
+      const reservation: Inference = { id: cacheKey(source, runpod), sourceId: source.id, status: 'submitting', mode: 'live', score: null, model: MODEL, modelRevision: runpod.revision, jobId: null, createdAt: new Date(Date.now() - 60001).toISOString(), error: null, attemptId: 'test-attempt', endpointId: runpod.endpoint };
+      await store.mutate(workspace, state => { state.inferences = [reservation]; });
+      expect((await submit(app, current.cookie)).json()).toMatchObject({ status: 'unknown', attemptId: 'test-attempt' });
+      await store.mutate(workspace, state => { state.inferences = Array.from({ length: 100 }, (_, index) => ({ ...reservation, id: 'reserved-' + index, status: 'unknown' })); });
+      const before = (await state(app, current.cookie)).inferences;
+      expect((await submit(app, current.cookie)).statusCode).toBe(422);
+      expect((await state(app, current.cookie)).inferences).toEqual(before);
+      expect(fake).not.toHaveBeenCalled();
+    } finally { await app.close(); }
+  });
+
+  it('reconciles only a completed job with matching provenance without submitting another GPU job', async () => {
+    const fake = vi.fn<typeof fetch>().mockRejectedValueOnce(new Error('ambiguous submission'));
+    const app = await buildApp({ store, localReviewer: true, runpod, fetcher: fake });
+    let clock: ReturnType<typeof vi.spyOn> | undefined;
+    try {
+      const current = await session(app); const source = current.state.sources.find(item => item.id === 'intel-inline-2023')!;
+      const submitted = (await submit(app, current.cookie)).json<Inference>();
+      const reconcile = () => app.inject({ method: 'POST', url: '/api/inference-reconcile/' + submitted.id, headers: json(current.cookie), payload: { jobId: 'test-job' } });
+      const now = Date.now(); clock = vi.spyOn(Date, 'now').mockReturnValue(now);
+      fake.mockResolvedValueOnce(new Response(JSON.stringify({ id: 'test-job', status: 'IN_QUEUE' })));
+      expect((await reconcile()).statusCode).toBe(409);
+      expect((await state(app, current.cookie)).inferences[0]).toMatchObject({ status: 'unknown', jobId: null });
+      clock.mockReturnValue(now + 3000);
+      const mismatched = structuredClone(source); mismatched.hash = 'different-source';
+      fake.mockResolvedValueOnce(completedResponse(mismatched));
+      expect((await reconcile()).statusCode).toBe(503);
+      expect((await state(app, current.cookie)).inferences[0]).toMatchObject({ status: 'unknown', jobId: null });
+      clock.mockReturnValue(now + 6000); fake.mockResolvedValueOnce(completedResponse(source));
+      const result = await reconcile();
+      expect(result.statusCode).toBe(200);
+      expect(result.json()).toMatchObject({ status: 'completed', score: 0.72, jobId: 'test-job', attemptId: submitted.attemptId });
+      const reused = await submit(app, current.cookie);
+      expect(reused.json()).toMatchObject({ status: 'completed', mode: 'cached', score: 0.72 });
+      expect(fake.mock.calls.filter(([url]) => String(url).endsWith('/run'))).toHaveLength(1);
+      expect((await state(app, current.cookie)).snapshots).toEqual(current.state.snapshots);
+    } finally { clock?.mockRestore(); await app.close(); }
+  });
+
+  it('never lets a delayed pending status overwrite a completed result from another server', async () => {
+    let release!: (response: Response) => void; let started!: () => void;
+    const held = new Promise<Response>(resolve => { release = resolve; });
+    const requested = new Promise<void>(resolve => { started = resolve; });
+    const slow = vi.fn<typeof fetch>().mockResolvedValueOnce(new Response(JSON.stringify({ id: 'test-job', status: 'IN_QUEUE' }))).mockImplementationOnce(async () => { started(); return held; });
+    const fast = vi.fn<typeof fetch>();
+    const first = await buildApp({ store, localReviewer: true, runpod, fetcher: slow });
+    const second = await buildApp({ store, localReviewer: true, runpod, fetcher: fast });
+    try {
+      const current = await session(first); const source = current.state.sources.find(item => item.id === 'intel-inline-2023')!;
+      const inference = (await submit(first, current.cookie)).json<Inference>();
+      const poll = (app: App) => app.inject({ method: 'POST', url: '/api/inference-status/' + inference.id, headers: json(current.cookie), payload: {} });
+      const inflight = poll(first).then(response => response); await requested;
+      fast.mockResolvedValueOnce(completedResponse(source));
+      expect((await poll(second)).json()).toMatchObject({ status: 'completed', score: 0.72 });
+      release(new Response(JSON.stringify({ id: 'test-job', status: 'IN_QUEUE' })));
+      expect((await inflight).json()).toMatchObject({ status: 'completed', score: 0.72 });
+      expect((await state(first, current.cookie)).inferences[0]).toMatchObject({ status: 'completed', score: 0.72 });
+    } finally { release(new Response(JSON.stringify({ id: 'test-job', status: 'IN_QUEUE' }))); await first.close(); await second.close(); }
+  });
+
+  it('can reconcile the full validated provider job-ID length but rejects oversized IDs without a provider call', async () => {
+    const fake = vi.fn<typeof fetch>(); const app = await buildApp({ store, localReviewer: true, runpod, fetcher: fake });
+    try {
+      const current = await session(app); const source = current.state.sources.find(item => item.id === 'intel-inline-2023')!;
+      const reserved: Inference = { id: cacheKey(source, runpod), sourceId: source.id, status: 'unknown', mode: 'live', score: null, model: MODEL, modelRevision: runpod.revision, jobId: null, createdAt: new Date().toISOString(), error: 'Unknown outcome', endpointId: runpod.endpoint };
+      await store.mutate(hash(current.cookie.split('=')[1]), saved => { saved.inferences = [reserved]; });
+      const reconcile = (jobId: string) => app.inject({ method: 'POST', url: '/api/inference-reconcile/' + reserved.id, headers: json(current.cookie), payload: { jobId } });
+      expect((await reconcile('j'.repeat(201))).statusCode).toBe(400);
+      expect(fake).not.toHaveBeenCalled();
+      const jobId = 'j'.repeat(200); fake.mockResolvedValueOnce(completedResponse(source, jobId));
+      const recovered = await reconcile(jobId);
+      expect(recovered.statusCode).toBe(200);
+      expect(recovered.json()).toMatchObject({ status: 'completed', jobId, score: 0.72 });
+      expect(fake).toHaveBeenCalledTimes(1);
+      expect(String(fake.mock.calls[0][0])).toContain('/status/' + jobId);
     } finally { await app.close(); }
   });
 });

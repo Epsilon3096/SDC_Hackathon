@@ -1,0 +1,17 @@
+{
+  "delayTime": 61368,
+  "executionTime": 3314,
+  "id": "72c6de36-e807-4a4b-a87c-9dfee79dd4b8-e2",
+  "output": {
+    "device": "cuda",
+    "model": "BAAI/bge-large-en-v1.5",
+    "preprocessing": "bge-cls-l2-512-bounded2000-v2",
+    "query": "Industrial manufacturing quality inspection: visual defect detection, automated optical inspection, inspection records, measurement and root cause analysis.",
+    "revision": "d4aa6901d3a41ba39fb536a557fa166f842b0e09",
+    "score": 0.6027023196220398,
+    "source_hash": "2d4c135ea6b00a4fe7b66f02186efefc443180b5082373504ca61e633068bffe",
+    "text_hash": "7ad805e9be8acb289c7a25777fe2c89d5c7850c283a9afd2054639fbb64f6fc6"
+  },
+  "status": "COMPLETED",
+  "workerId": "02tow7yr3y6y4d"
+}

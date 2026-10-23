@@ -1,0 +1,12 @@
+{
+  "purpose": "Small hand-authored synthetic smoke evaluation. These are not fetched sources, expert labels, a representative test set or measured worker outcomes.",
+  "hypothesis": "The two direct manufacturing inspection passages should rank above the two unrelated passages. Ambiguous passages require human review, regardless of score.",
+  "cases": [
+    { "id": "relevant-aoi", "group": "relevant", "text": "In a synthetic electronics factory example, automated optical inspection flags suspected surface defects. A quality inspector reviews false alarms and missed defects, records the decision, and escalates recurring errors for root cause analysis." },
+    { "id": "relevant-quality-records", "group": "relevant", "text": "A synthetic manufacturing quality team compares caliper measurements and inspection records across production batches. Inspectors investigate defect trends, check measurement consistency and document corrective actions before releasing a batch." },
+    { "id": "ambiguous-research", "group": "ambiguous", "text": "A synthetic research abstract describes an image anomaly detection model that performs well on a small visual benchmark. It provides no factory deployment evidence, occupational task analysis, Malaysian demand data or worker qualification requirements." },
+    { "id": "ambiguous-keyword-negation", "group": "ambiguous", "text": "A synthetic article uses the words industrial inspection and automated optical inspection as examples of technical vocabulary. Its actual subject is how a language model translates marketing copy; it presents no manufacturing inspection method or deployment." },
+    { "id": "unrelated-retail", "group": "unrelated", "text": "In a synthetic online retail example, a chatbot answers customer questions about returns, shipping addresses and discount codes. The store evaluates conversation satisfaction and whether buyers locate their order history." },
+    { "id": "unrelated-garden", "group": "unrelated", "text": "A synthetic gardening guide explains how to select balcony herbs, water seedlings and prepare potting soil. It recommends matching sunlight exposure to the plants and keeping a weekly watering calendar." }
+  ]
+}

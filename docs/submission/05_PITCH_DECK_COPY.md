@@ -74,9 +74,9 @@ Presenter note: source readings support the exercise; completion does not certif
 - Reproducible tests and desktop/mobile browser checks.
 - Source/role scope, uncertainty and separate adoption remain visible.
 
-Small honest status: **Live runtime AI and final production hosting deferred. User-impact baseline not measured.**
+Small honest status: **Initial GPU inference verified; final hosting unverified. User-impact baseline not measured.**
 
-Architecture strip: React/TypeScript → Fastify → PostgreSQL; arXiv ingestion; planned RunPod embedding triage labelled **deferred**.
+Architecture strip: React/TypeScript → Fastify → PostgreSQL; arXiv ingestion; RunPod embedding triage labelled **one public passage and six synthetic cases completed; wider quality unmeasured**. Update the actual deck from this copy only after checking final platform status; the earlier rendered deck remains a draft.
 
 Presenter note: insert the actual final test count/log if desired. Do not reuse an outdated count. The intended model has one bounded task: relevance triage, not career judgement.
 

@@ -1,6 +1,6 @@
 # SDC 2026 Technical Tools Declaration — ShiftBridge
 
-Prepared 21 October 2026. Copy into the official declaration and export as `SDC2026_Console_TechDeclaration.pdf`. This draft follows all eight sections. “Not used”, “None” and “Deferred” are deliberate status statements, not blank fields. **REQUIRED INPUT** means the participant must supply or confirm information before signing. No secrets belong in this document.
+Draft text updated 23 October 2026; the earlier rendered PDF must be regenerated before final submission. Copy into the official declaration and export as `SDC2026_Console_TechDeclaration.pdf`. This draft follows all eight sections. “Not used”, “None” and “Pending verification” are deliberate status statements, not blank fields. **REQUIRED INPUT** means the participant must supply or confirm information before signing. No secrets belong in this document.
 
 ## 1. Team and project overview
 
@@ -11,7 +11,7 @@ Prepared 21 October 2026. Copy into the official declaration and export as `SDC2
 | Leader name | Tan King Yang |
 | Leader email and phone | Supplied separately for the private official PDF; intentionally omitted here. |
 | University affiliation(s) | UTAR |
-| Live prototype URL | **REQUIRED EXTERNAL INPUT — no verified stable production URL for the current version.** Local application is runnable; Replit publishing is deferred. An earlier development preview is not a stable judge link. |
+| Live prototype URL | **REQUIRED EXTERNAL INPUT — no verified stable production URL for the current version.** Local application is runnable; Replit publishing is in preparation. An earlier development preview is not a stable judge link. |
 | Code repository URL, public or judge access | **REQUIRED EXTERNAL INPUT — no verified public/judge-accessible repository URL in this pack.** |
 
 ## 2. Architecture and technology stack
@@ -23,7 +23,7 @@ The React/TypeScript interface calls a Fastify API. Synthetic worker profiles, p
 
 The arXiv connector fetches and validates Atom metadata, with an RSS fallback. Source content is untrusted. A reviewer selects an exact passage, records an interpretation and role scope, then approves it. A separate publication operation produces a new snapshot. Deterministic TypeScript code calculates skill alignment, qualification status and prerequisite-aware learning priorities. The worker explicitly adopts a plan; its original assessment, profile and constraints are captured for later export.
 
-An isolated rehearsal uses the same API operations with synthetic data and generation guards. It does not execute paid inference. The RunPod adapter is prepared for public-passage relevance scoring but remains unconfigured; no runtime model execution is claimed. Replit contains an earlier development version; current production hosting is deferred. Validation includes automated tests and browser exercises, while human usability and workforce validation remain outstanding.
+An isolated rehearsal uses the same API operations with synthetic data and generation guards. It does not execute paid inference. RunPod performs bounded public-passage relevance triage. The app accepted one live Intel-passage result; six declared synthetic cases also completed. Similarity never publishes evidence or ranks workers. Replit contains an earlier development version; current hosting verification is pending. Validation includes automated tests and browser exercises, while human usability and workforce validation remain outstanding.
 <!-- /word-limit -->
 
 A system block diagram appears in proposal section 3.1.
@@ -42,7 +42,7 @@ Other runtime/platform components: JavaScript/TypeScript, HTML/CSS, Node.js 24.1
 | --- | --- | --- |
 | arXiv Atom API — export.arxiv.org | Refresh industrial-inspection research candidates, actual publication/revision metadata and source links. | Public endpoint, no app API key. Live retrieval has been exercised. Rate limits/network failures are handled; no availability guarantee. |
 | arXiv cs.CV RSS — rss.arxiv.org | Fallback candidate ingestion with honest announcement/date metadata. | Public feed, no app API key. Code path and validation tested; announce date is not invented publication date. |
-| RunPod serverless API | Intended embedding relevance job submission/status polling. | **Deferred/unconfigured.** No live job, paid usage or sponsor access proof. |
+| RunPod serverless API | Embedding relevance job submission/status polling, with durable reservations and matching provenance. | **Live execution verified.** One app-accepted Intel-passage result and six synthetic cases completed. Endpoint-restricted GET/POST key configured privately; billed usage remains to be checked. |
 
 No payment, recruitment, email, mapping or messaging APIs are called by the application. External learning/source links open the publisher’s website. Development-time Codex browsing and research are disclosed separately below; they are not end-user runtime APIs.
 
@@ -50,22 +50,22 @@ No payment, recruitment, email, mapping or messaging APIs are called by the appl
 
 | Service/provider | Purpose | Plan/region and actual status |
 | --- | --- | --- |
-| Replit development workspace and managed PostgreSQL | Earlier source import, HTTPS standalone preview, database persistence check. | **REQUIRED INPUT — exact plan/region/resource account details if required.** Public publishing was not completed. Latest local changes are not verified there; work is on hold. |
-| RunPod | Proposed GPU relevance service. | **Not provisioned/configured.** Region, endpoint and resource tier not selected; work deferred. |
-| GitHub | Required source delivery, later. | No verified repository link supplied here. Do not claim repository visibility or collaborator access until checked. |
+| Replit development workspace and managed PostgreSQL | Earlier source import, HTTPS standalone preview, database persistence check. | **REQUIRED INPUT — exact plan/region/resource account details if required.** Public publishing was not completed. Latest local changes still need upload and verification; setup is active within existing credits. |
+| RunPod | Bounded GPU relevance service. | Endpoint `0qcgjcclf6fln9`, container built from private source; first real passage and six synthetic jobs completed. One 16 GB GPU family; quoted runtime US$0.58/hour; max 1/active 0 workers; idle 5s; execution 120s. Region and actual completed-job usage remain to be recorded. |
+| GitHub | Private GPU build input; full app source delivery still pending. | Private `Epsilon3096/shiftbridge-inference`, commit `5ddfef5b7f553d6e1d1b9618fcaf9f6e4f007598`, connected with repository-only permission. This is not the full app judge-access source link. |
 | Local Windows + PGlite | Current development, tests and persisted demo. | Local execution; not cloud hosting. |
 
 ## 4. AI tools, models and datasets
 
 ### 4.1 AI models used in the solution
 
-**No AI model has been executed live by the current prototype.** Matching and planning are deterministic; evidence mapping is reviewed manually.
+**One live public-passage result was accepted by the application; six synthetic triage cases also completed.** Matching and planning are deterministic; evidence mapping is reviewed manually.
 
 | Model/version | Source/provider | Usage | Licence/terms and status |
 | --- | --- | --- | --- |
-| `BAAI/bge-large-en-v1.5` — proposed identifier; deployed revision not pinned | BAAI, intended via RunPod | Planned pretrained embedding relevance triage only. No training/fine-tuning. | **Deferred: verify the exact model card/licence and pin the executed revision before use.** Adapter configuration is not evidence of a deployed model. |
+| `BAAI/bge-large-en-v1.5` — build revision `d4aa6901d3a41ba39fb536a557fa166f842b0e09` | BAAI, configured for RunPod | Pretrained embedding relevance triage only; one live passage plus six synthetic cases completed; app accepted the real-passage result. No training/fine-tuning. | **Executed revision pinned; genuine job provenance recorded in `../RUNPOD_VERIFICATION.md`.** Final model-card/licence review remains required; these cases do not establish accuracy. |
 
-The model row declares planned code/configuration so it is not mistaken for hidden active use. Update it with real revision, job evidence and licence verification if enabled later.
+The model row records initial executed use. Retain genuine job evidence and complete the final licence review; no threshold calibration or general model accuracy is established. The Python worker uses PyTorch, Transformers, huggingface-hub, safetensors and the RunPod SDK; pinned direct versions are in `runpod/requirements.txt` and `runpod/Dockerfile`. These worker dependencies are separate from the npm inventory; transitive Python hashes are not yet frozen.
 
 ### 4.2 Datasets
 
@@ -97,18 +97,18 @@ AI assistance contributed substantially to concept development, code, tests and 
 
 ## 5. Sponsor-provided resources
 
-**REQUIRED HUMAN ANSWER — Yes or No after checking actual credits, platform access, mentoring and data use.** No successful sponsor-credit redemption or live RunPod usage is evidenced here. The earlier Replit development use must still be declared as platform use; whether it was sponsor-provided cannot be inferred from a rejected voucher.
+**REQUIRED HUMAN ANSWER — Yes or No after checking actual credits, platform access, mentoring and data use.** The participant reported US$20 Replit and US$25 RunPod credits and authorised their use; RunPod setup is in progress. Confirm the source of those credits and any mentoring separately. Earlier Replit development and current endpoint preparation must be declared truthfully; a rejected earlier voucher does not determine funding provenance. Initial live GPU jobs completed; actual billed usage still needs provider inspection.
 
 | Sponsor | Resource | How actually used |
 | --- | --- | --- |
 | Replit — sponsor funding status unconfirmed | Development platform / managed PostgreSQL | Earlier imported version and persistence test; no current production deployment. |
-| RunPod | None used yet | Deferred; no endpoint or live job. |
+| RunPod — credit provenance requires confirmation | Existing US$25 credit and serverless build setup | Private worker repository connected; endpoint container built; one real-passage and six synthetic jobs completed. Actual billed usage remains to be checked. |
 | Other sponsor/mentor | **REQUIRED INPUT or None** | State actual resources and contribution without exposing codes, keys or contact details unnecessarily. |
 
 #### Essential or replaceable — maximum 100 words
 
 <!-- word-limit: T5 100 -->
-The application currently runs locally without sponsor services. Replit is the intended hosted environment; its runtime and PostgreSQL role are technically replaceable, although competition rules may still require its use. RunPod is planned for relevance triage and is not required for deterministic matching or manual review. It has not been executed. A failure must preserve published recommendations and never impersonate successful inference. This technical replaceability is not a claim of exemption from sponsor-use rules. Final platform obligations and genuine use evidence remain unresolved while deployment is deferred.
+The application currently runs locally without sponsor services. Replit is the intended hosted environment; its runtime and PostgreSQL role are technically replaceable, although competition rules may still require its use. RunPod is planned for relevance triage and is not required for deterministic matching or manual review. Initial passage inference is verified. A failure must preserve published recommendations and never impersonate successful inference. This technical replaceability is not a claim of exemption from sponsor-use rules. Final platform obligations and genuine use evidence remain unresolved while final deployment verification is pending.
 <!-- /word-limit -->
 
 ## 6. Security, privacy and responsible use
@@ -120,7 +120,7 @@ The prototype stores editable synthetic names, qualifications, experience, skill
 
 The session cookie is HttpOnly and SameSite=Strict, with Secure enabled in hosted HTTPS mode. API validation, origin checks, rate limits and transactional writes protect state changes. Workspace data persists in PostgreSQL; the cookie expires after fourteen days, but database cleanup is not automated. A retention/deletion policy is therefore still required before a real pilot.
 
-arXiv requests contain a fixed research query, not worker profiles. The deferred RunPod adapter sends a bounded public-source passage and relevance query, not worker data. Publisher links may involve those sites’ own privacy practices. No production security certification or independent audit is claimed.
+arXiv requests contain a fixed research query, not worker profiles. The configured RunPod adapter sends a bounded public-source passage and relevance query, not worker data. Publisher links may involve those sites’ own privacy practices. No production security certification or independent audit is claimed.
 <!-- /word-limit -->
 
 ### 6.2 Known limitations and risks — maximum 150 words
@@ -130,7 +130,7 @@ The six-skill model is incomplete, self-reported and not validated as occupation
 
 Research relevance does not prove deployment or changed duties. Exact passages, recorded human interpretation, role scope and separate publication constrain evidence changes. Rejection preserves accepted plans; corrections create new snapshots. Older unscoped rules are explicitly labelled rather than silently rewritten.
 
-No runtime model has executed, so model accuracy, threshold calibration and GPU latency are unmeasured. The live feed may fail or return insufficient evidence; previous reviewed state remains readable. Learning times are team estimates; credentials and optional tools are outside the displayed learning cost. Completion records activity rather than competence. Automated tests and developer rehearsals do not substitute for independent worker validation, usability measurement or a complete security/accessibility audit.
+Seven initial GPU jobs completed, but model accuracy and threshold calibration remain unmeasured. Recorded timings are single-run observations, not a latency benchmark. The live feed may fail or return insufficient evidence; previous reviewed state remains readable. Learning times are team estimates; credentials and optional tools are outside the displayed learning cost. Completion records activity rather than competence. Automated tests and developer rehearsals do not substitute for independent worker validation, usability measurement or a complete security/accessibility audit.
 <!-- /word-limit -->
 
 ## 7. Compliance and readiness checklist
@@ -141,7 +141,7 @@ No runtime model has executed, so model accuracy, threshold calibration and GPU 
 | Third-party licences followed and attribution provided | Package metadata inventoried and sources linked; final notices, publisher terms and redistribution review still required. |
 | No credentials exposed | No credentials are included in these drafts. Final source/repository/recording needs a secret scan and visual check. |
 | AI development use disclosed and reviewed by team | Major use disclosed; human review/ownership confirmation pending. |
-| Sponsor use declared | Earlier platform use described; actual sponsor access/mentoring confirmation and deferred proof pending. |
+| Sponsor use declared | Earlier platform use described; credit provenance/mentoring confirmation and completed platform proof pending. |
 | Prototype accessible through provided links | **Not complete.** Stable current deployment and repository access not verified. |
 | All fields complete within limits | Limited responses fit; required participant/external inputs and signatures remain. |
 

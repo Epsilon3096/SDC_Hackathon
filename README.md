@@ -24,7 +24,7 @@ No key or external database is required locally. PGlite runs embedded PostgreSQL
 
 `docs/submission/README.md` indexes the Console proposal, technical declaration, requirements-to-proof matrix, 6:40 recording script, deck copy, dependency inventory and blank evaluation sheet. All eight bounded template responses have reproducible word checks. Required human declarations, baseline evidence and public links remain clearly marked. Private contact details and signed forms do not belong in this public source directory.
 
-Gemini provided ideas and critical review only during this release pass. Accepted changes and rejected overclaims are documented in `docs/GEMINI_REVIEW.md`. This remains a synthetic demonstration, with no live runtime model inference or verified commercial deployment.
+Gemini provided ideas and critical review on 21 October; three follow-up attempts on 22 October failed with service errors and supplied no new critique. Accepted changes and rejected overclaims are documented in `docs/GEMINI_REVIEW.md`. This remains a synthetic demonstration, with one application-accepted live GPU result and a six-case synthetic triage smoke evaluation; no commercial deployment is claimed.
 
 ## Product boundaries
 
@@ -39,11 +39,13 @@ Gemini provided ideas and critical review only during this release pass. Accepte
 - Learning blocks combine public resources and team-authored practice estimates. Completing a step does not award a qualification or increase proficiency automatically.
 - No measured employment, wage, emissions or planning-time result is claimed.
 - Real arXiv refresh may fail; the previous reviewed state remains available. Research is not deployment evidence.
-- RunPod is optional in this build and currently deferred. Its absence is visible. No simulated GPU score is presented as a live result.
+- RunPod relevance triage is separate from deterministic planning. The worker container built successfully; the app accepted a completed Intel-passage GPU result, and six declared synthetic cases completed. These establish execution and a tiny ranking smoke result, not general accuracy. Failed, unavailable and uncertain requests are visible; no simulated score is presented as live inference.
 
 ## Replit
 
-Development and testing currently continue locally. Replit setup and publishing are on hold at the participant's request; the workspace contains an earlier working version. Upload and verification of the final source will follow later. Keeping source in Replit is not, by itself, a verified interpretation of the competition's proof-of-use requirement.
+Development and platform setup are proceeding within the participant's existing US$20 Replit and US$25 RunPod credits. The Replit workspace contains an earlier working version; the latest source still needs upload and hosted verification. A RunPod queue endpoint was created from the private worker repository and its container built successfully. A completed Intel-passage GPU result was accepted by the app and six synthetic triage jobs completed. A final public application deployment remains unverified. Keeping source in Replit is not, by itself, verified competition proof of use.
+
+The 23 October local checkpoint passed 257 application tests, with three optional real-PostgreSQL tests skipped, plus TypeScript checking, the production build, built-app smoke test and 11 offline Python worker tests. See `docs/BUILD_STATUS.md` for dated evidence and remaining release gates. Scan source with `python scripts/package-release.py --scan-only`; after committing verified source, create a new archive with `python scripts/package-release.py --output ../ShiftBridge_Replit_Source_23Oct.zip`.
 
 See `docs/DEPLOYMENT.md`. Hosted environments require a real PostgreSQL `DATABASE_URL`; the app deliberately refuses ephemeral disk-only hosting. The Replit commands enable isolated demonstration review for judges. Configure an `ADMIN_TOKEN` for controlled review or future paid inference; demo mode never authorises paid inference. Never commit keys, database URLs, voucher codes or runtime data.
 

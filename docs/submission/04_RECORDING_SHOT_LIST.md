@@ -9,7 +9,7 @@ The reviewed requirement is a **5–7 minute YouTube pitch with prototype demons
 - Keep a screen region large enough that source dates, scope, old/new step positions and explicit adoption are readable. Prefer cuts between completed actions; do not edit failed live calls into apparent success.
 - Start the isolated **Guided demo** when indicated. It seeds the documented Farid case, not a fictitious completed user journey. The guide milestones update from real saved state.
 - Rehearse the sequence once, then restart only the rehearsal. Confirm the regular workspace stays intact. Do not speed up the video to hide missing review or call a cached record newly retrieved.
-- If platform work remains deferred, record localhost and state that it is local. Do not show an unrelated hosted preview as this final version.
+- Record only the environment actually verified. If the latest hosted build or GPU result is still pending, show the local build and state that limit. Do not show an earlier hosted preview as this final version.
 
 ## Timed shots and narration
 
@@ -24,7 +24,7 @@ The reviewed requirement is a **5–7 minute YouTube pitch with prototype demons
 | 4:00–4:50 | Worker perspective: What changed; show AI block 3→1, documentation 1→2, data 2→3, root cause 4→4. Switch scenarios briefly. | “The next action actually changes. The same worker now starts with AI-inspection literacy while the documentation-to-data-to-investigation prerequisite chain stays intact. Moderate alignment changes 52.13 to 51.02; faster adoption gives 49.48. These are model outputs, not a loss of the worker’s skills. Total planned effort remains 16 hours, four weeks and RM 0.” |
 | 4:50–5:30 | Open the QA practice CSV/guide and the intended output: confusion table plus human-escalation reasoning. | “The recommendation ends in practical work: distinguish reference labels from hypothetical AI flags, identify missed defects and false alarms, and explain when human review is needed. The20-row dataset is synthetic; it is not evidence of our model’s accuracy. Complete ML foundations before computer-vision concepts if needed.” |
 | 5:30–6:05 | Inspect saved-baseline preservation; explicitly adopt revision; download/open decision brief. | “Publication did not silently replace the accepted plan. Farid chooses the revision. This brief preserves the original profile, qualification status, evidence version, scope, sources, constraints and study order. A completion checkbox records activity, not automatic skill gain.” |
-| 6:05–6:40 | SDG 4.4 / 4.3, real final test log, short limits/next validation slide. | “The intended contribution is relevant, affordable learning. We have working local software and verified developer tests, not measured employment or planning-time improvement. Independent user validation is next. Live model triage and final hosting remain deferred; today’s planner is deterministic and evidence is human-reviewed. Codex assisted substantially; our team is responsible for the final decisions and entry.” |
+| 6:05–6:40 | SDG 4.4 / 4.3, real final test log, short limits/next validation slide. | “The intended contribution is relevant, affordable learning. We have working local software and verified developer tests, not measured employment or planning-time improvement. Independent user validation is next. Initial live model triage is verified and final hosting verification remains pending; today’s planner is deterministic and evidence is human-reviewed. Codex assisted substantially; our team is responsible for the final decisions and entry.” |
 
 Numbers above match engine 1.1.0 and the constructed Farid case at preparation time. If the model/case changes, replace the narration with the actual results; do not preserve an obsolete number for dramatic effect.
 
@@ -40,7 +40,7 @@ Numbers above match engine 1.1.0 and the constructed Farid case at preparation t
 
 | Likely question | Accurate answer to develop in the team’s own words |
 | --- | --- |
-| Where is AI running? | No runtime model is currently executing. The working system is deterministic planning and human evidence review; the prepared embedding adapter is deferred. AI-assisted coding is a separate disclosed use. |
+| Where is AI running? | RunPod completed one Intel-passage relevance request accepted by the app and six synthetic triage cases. Planning remains deterministic and evidence is human-reviewed; a cosine score cannot publish a rule. See the recorded jobs and limitations in RUNPOD_VERIFICATION.md. AI-assisted coding is a separate disclosed use. |
 | Why did the score fall? | The profile did not change. A reviewed scenario rule increased the relative importance of a weaker selected skill. It is not a finding about reduced ability or redundancy risk. |
 | Who validated the weights? | They are transparent prototype assumptions, not expert-calibrated standards. Intended-user and occupational validation remain future work. |
 | Is the worker qualified for an adjacent role? | Unknown unless a specific verified rule is recorded. Similarity across six skills cannot certify eligibility. |

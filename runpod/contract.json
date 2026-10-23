@@ -1,0 +1,10 @@
+{
+  "model": "BAAI/bge-large-en-v1.5",
+  "query": "Industrial manufacturing quality inspection: visual defect detection, automated optical inspection, inspection records, measurement and root cause analysis.",
+  "queryInstruction": "Represent this sentence for searching relevant passages: ",
+  "preprocessing": "bge-cls-l2-512-bounded2000-v2",
+  "maxCharacters": 2000,
+  "minCharacters": 12,
+  "maxTokens": 512,
+  "defaultRevision": "d4aa6901d3a41ba39fb536a557fa166f842b0e09"
+}

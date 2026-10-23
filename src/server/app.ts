@@ -7,9 +7,9 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { z } from 'zod';
 import { assess, createPlan } from '../shared/engine';
-import type { AppState, Evaluation, Mapping, Profile, ScenarioId, Snapshot } from '../shared/types';
+import type { AppState, Evaluation, Inference, Mapping, Profile, ScenarioId, Snapshot } from '../shared/types';
 import { Store, audit, hash, type StoredState } from './store';
-import { configured, fetchArxiv, mergeSourceBatch, submitInference, pollInference, cacheKey, type RunpodConfig } from './connectors';
+import { configured, fetchArxiv, mergeSourceBatch, submitInference, pollInference, cacheKey, inferenceText, runpodContext, inferenceProvenance, matchesInferenceContext, MIN_INFERENCE_TEXT_LENGTH, type RunpodConfig } from './connectors';
 
 class HttpError extends Error { constructor(public statusCode: number, message: string) { super(message); } }
 const fail = (status: number, message: string): never => { throw new HttpError(status, message); };
@@ -105,7 +105,7 @@ export async function buildApp(options: AppOptions) {
   app.get('/api/state', async (req): Promise<AppState> => {
     const { state, adminUntil } = await readWorkspace(req);
     const authenticated = adminUntil > Date.now();
-    return { ...state, connection: { database: store.kind, runpod: configured(runpod), adminConfigured: !!options.adminToken || !!options.localReviewer, admin: isRehearsal(req) || !!options.localReviewer || !!options.demoReview || authenticated, reviewMode: isRehearsal(req) ? 'demo' : options.localReviewer ? 'local' : authenticated ? 'authenticated' : options.demoReview ? 'demo' : 'locked', connector: 'arXiv Atom API / daily RSS fallback · manual refresh' } };
+    return { ...state, connection: { database: store.kind, runpod: configured(runpod), runpodContext: runpodContext(runpod), adminConfigured: !!options.adminToken || !!options.localReviewer, admin: isRehearsal(req) || !!options.localReviewer || !!options.demoReview || authenticated, reviewMode: isRehearsal(req) ? 'demo' : options.localReviewer ? 'local' : authenticated ? 'authenticated' : options.demoReview ? 'demo' : 'locked', connector: 'arXiv Atom API / daily RSS fallback · manual refresh' } };
   });
   app.get('/api/evaluate', async (req): Promise<Evaluation> => {
     const { state } = await readWorkspace(req); const input = select(state, req.query);
@@ -223,14 +223,42 @@ export async function buildApp(options: AppOptions) {
     });
   });
   app.post<{ Params: { sourceId: string } }>('/api/inference/:sourceId', async req => {
-    await requireAdmin(req, true); const { state } = await readWorkspace(req);
-    const source = state.sources.find(s => s.id === req.params.sourceId) || fail(404, 'Source not found.');
-    if (source.type === 'synthetic') fail(422, 'Use a real source for the live GPU relevance check.');
-    const existing = state.inferences.find(i => i.id === cacheKey(source, runpod) && ['completed', 'pending'].includes(i.status));
-    if (existing) return { ...existing, mode: existing.status === 'completed' ? 'cached' : existing.mode };
-    cooldown(wid(req) + ':inference', 30000);
-    let inference; try { inference = await submitInference(source, runpod, options.fetcher); } catch { fail(503, 'RunPod submission failed. No recommendation was changed.'); }
-    return mutate(req, s => { s.inferences = [inference!, ...s.inferences.filter(i => i.id !== inference!.id)].slice(0, 100); audit(s, 'inference.' + inference!.status, source.id); return inference!; });
+    await requireAdmin(req, true);
+    // The database reservation precedes the paid network request. A second server,
+    // tab or restarted process must see it before it can submit another job.
+    const reservation = await mutate(req, state => {
+      const source = state.sources.find(s => s.id === req.params.sourceId) || fail(404, 'Source not found.');
+      if (source.type === 'synthetic') fail(422, 'Use a real source for the live GPU relevance check.');
+      if (inferenceText(source).trim().length < MIN_INFERENCE_TEXT_LENGTH) fail(422, 'A recorded source passage of at least ' + MIN_INFERENCE_TEXT_LENGTH + ' characters is required within the bounded input before running a relevance check. No GPU request was sent.');
+      const id = cacheKey(source, runpod);
+      const existing = state.inferences.find(i => i.id === id);
+      if (existing && !matchesInferenceContext(existing, source, runpod)) fail(409, 'The saved inference context is inconsistent. Its record is preserved; no new GPU request was sent.');
+      if (existing && ['completed', 'pending', 'submitting', 'unknown'].includes(existing.status)) {
+        Object.assign(existing, inferenceProvenance(source, runpod));
+        if (existing.status === 'submitting' && Date.now() - Date.parse(existing.createdAt) > 60000) {
+          existing.status = 'unknown'; existing.error = 'The submission outcome could not be confirmed. Check the provider job history before retrying; automatic resubmission is blocked.';
+          audit(state, 'inference.unknown', id + ' · submission reservation retained');
+        }
+        return { acquired: false, inference: { ...existing, mode: existing.status === 'completed' ? 'cached' as const : existing.mode }, source };
+      }
+      if (!existing && state.inferences.length >= 100) fail(422, 'This workspace has reached its 100 inference-record limit. Existing jobs and results have been preserved.');
+      cooldown(wid(req) + ':inference', 30000);
+      const inference: Inference = { id, sourceId: source.id, status: configured(runpod) ? 'submitting' : 'unconfigured', mode: configured(runpod) ? 'live' : 'none', score: null, ...inferenceProvenance(source, runpod), jobId: null, createdAt: new Date().toISOString(), error: configured(runpod) ? null : 'Configure RUNPOD_API_KEY, RUNPOD_ENDPOINT_ID and a pinned RUNPOD_MODEL_REVISION before running inference.', attemptId: randomUUID(), endpointId: runpod.endpoint };
+      state.inferences = [inference, ...state.inferences.filter(i => i.id !== id)];
+      audit(state, 'inference.' + inference.status, source.id);
+      return { acquired: configured(runpod), inference, source };
+    });
+    if (!reservation.acquired) return reservation.inference;
+    let result: Inference;
+    try { result = { ...await submitInference(reservation.source, runpod, options.fetcher), attemptId: reservation.inference.attemptId, endpointId: reservation.inference.endpointId }; }
+    catch {
+      result = { ...reservation.inference, status: 'unknown', error: 'The provider may have accepted this request, but its outcome could not be confirmed. Automatic resubmission is blocked to prevent duplicate charges. Check the provider job history and reconcile a completed job.' };
+    }
+    return mutate(req, state => {
+      const current = state.inferences.find(i => i.id === reservation.inference.id) || fail(409, 'The saved inference reservation is missing. Do not submit again until the provider history has been checked.');
+      if (current.attemptId !== reservation.inference.attemptId || !['submitting', 'unknown'].includes(current.status)) return current;
+      Object.assign(current, result); audit(state, 'inference.' + current.status, current.sourceId); return current;
+    });
   });
   app.post<{ Params: { id: string } }>('/api/inference-status/:id', async req => {
     await requireAdmin(req, true); const { state } = await readWorkspace(req);
@@ -239,7 +267,33 @@ export async function buildApp(options: AppOptions) {
     cooldown(wid(req) + ':poll:' + inference.id, 2000);
     const source = state.sources.find(s => s.id === inference.sourceId)!;
     let updated; try { updated = await pollInference(inference, source, runpod, options.fetcher); } catch { fail(503, 'Provider status could not be verified. The pending job and published recommendations are preserved.'); }
-    return mutate(req, s => { const index = s.inferences.findIndex(i => i.id === inference.id); s.inferences[index] = updated!; if (updated!.status !== 'pending') audit(s, 'inference.' + updated!.status, updated!.id); return updated!; });
+    return mutate(req, state => {
+      const current = state.inferences.find(i => i.id === inference.id) || fail(409, 'The saved inference record is missing.');
+      if (current.attemptId !== inference.attemptId || current.jobId !== inference.jobId) fail(409, 'This inference attempt changed. Reload its current status.');
+      // A delayed IN_QUEUE response must not overwrite a completed result from
+      // another tab or server instance.
+      if (current.status !== 'pending') return current;
+      Object.assign(current, updated!); if (current.status !== 'pending') audit(state, 'inference.' + current.status, current.id); return current;
+    });
+  });
+  app.post<{ Params: { id: string } }>('/api/inference-reconcile/:id', async req => {
+    await requireAdmin(req, true);
+    const { jobId } = z.object({ jobId: z.string().min(1).max(200).regex(/^[\w-]+$/) }).strict().parse(req.body);
+    const { state } = await readWorkspace(req);
+    const inference = state.inferences.find(i => i.id === req.params.id) || fail(404, 'Inference not found.');
+    if (!['submitting', 'unknown'].includes(inference.status)) fail(409, 'Only a submission with an unknown outcome needs reconciliation.');
+    const source = state.sources.find(s => s.id === inference.sourceId) || fail(404, 'Source not found.');
+    cooldown(wid(req) + ':reconcile:' + inference.id, 2000);
+    let verified: Inference;
+    try { verified = await pollInference({ ...inference, status: 'pending', jobId }, source, runpod, options.fetcher); }
+    catch { return fail(503, 'The provider job could not be verified against this source and model. The reservation is preserved; no new GPU job was submitted.'); }
+    if (verified.status !== 'completed') fail(409, 'Only a completed job with matching source, model and GPU provenance can resolve this reservation. Wait for the provider job to finish; no new job was submitted.');
+    return mutate(req, currentState => {
+      const current = currentState.inferences.find(i => i.id === inference.id) || fail(409, 'The saved inference reservation is missing.');
+      if (current.attemptId !== inference.attemptId) fail(409, 'This inference attempt changed. Reload its current status.');
+      if (!['submitting', 'unknown'].includes(current.status)) return current;
+      Object.assign(current, verified); audit(currentState, 'inference.reconciled', current.id + ' · provider provenance verified'); return current;
+    });
   });
   app.setErrorHandler((error, _req, reply) => {
     if (error instanceof z.ZodError) return reply.code(400).send({ error: 'Invalid input: ' + error.issues.map(i => i.path.join('.') + ' ' + i.message).join('; ').slice(0, 700) });

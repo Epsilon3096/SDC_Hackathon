@@ -1,11 +1,13 @@
 import { XMLParser, XMLValidator } from 'fast-xml-parser';
 import { randomUUID } from 'node:crypto';
-import type { Source, Inference } from '../shared/types';
+import type { Source, Inference, RunpodContext } from '../shared/types';
 import { hash } from './store';
+import relevanceContract from '../../runpod/contract.json';
 
-export const MODEL = 'BAAI/bge-large-en-v1.5';
-export const RELEVANCE_QUERY = 'Industrial manufacturing quality inspection: visual defect detection, automated optical inspection, inspection records, measurement and root cause analysis.';
-export const PREPROCESSING = 'bounded-abstract-2000-v1';
+export const MODEL = relevanceContract.model;
+export const RELEVANCE_QUERY = relevanceContract.query;
+export const PREPROCESSING = relevanceContract.preprocessing;
+export const MIN_INFERENCE_TEXT_LENGTH = relevanceContract.minCharacters;
 export const ARXIV_URL = 'https://export.arxiv.org/api/query?search_query=' + encodeURIComponent('cat:cs.CV AND (all:"industrial inspection" OR all:"visual anomaly detection")') + '&sortBy=submittedDate&sortOrder=descending&start=0&max_results=6';
 export const ARXIV_RSS_URL = 'https://rss.arxiv.org/rss/cs.CV';
 
@@ -147,25 +149,40 @@ export function mergeSourceBatch(existing: Source[], incoming: Source[]) {
   return { created, enriched };
 }
 export interface RunpodConfig { key?: string; endpoint?: string; revision?: string; }
-export function configured(config: RunpodConfig) { return !!(config.key && config.endpoint && /^[a-zA-Z0-9-]+$/.test(config.endpoint) && config.revision && /^[0-9a-f]{40}$/i.test(config.revision)); }
-export function cacheKey(source: Source, config: RunpodConfig) { return hash(source.hash + MODEL + config.revision + RELEVANCE_QUERY + PREPROCESSING); }
+export function configured(config: RunpodConfig) { return !!(config.key?.trim() && config.endpoint && /^[a-zA-Z0-9-]{1,100}$/.test(config.endpoint) && config.revision && /^[0-9a-f]{40}$/.test(config.revision)); }
+// Use Unicode code points, matching Python's bound and preserving surrogate pairs.
+export function inferenceText(source: Source) { return Array.from(source.excerpt).slice(0, relevanceContract.maxCharacters).join(''); }
+export function cacheKey(source: Source, config: RunpodConfig) { return hash(JSON.stringify([source.hash, hash(inferenceText(source)), MODEL, config.revision, RELEVANCE_QUERY, PREPROCESSING])); }
+export function runpodContext(config: RunpodConfig): RunpodContext { return { model: MODEL, modelRevision: config.revision || null, preprocessing: PREPROCESSING, query: RELEVANCE_QUERY }; }
+export function inferenceProvenance(source: Source, config: RunpodConfig) { return { ...runpodContext(config), textHash: hash(inferenceText(source)), sourceHash: source.hash }; }
+/** Legacy fields may be absent, but the full cache key still binds the original context. */
+export function matchesInferenceContext(inference: Inference, source: Source, config: RunpodConfig) {
+  const expected = inferenceProvenance(source, config);
+  return inference.id === cacheKey(source, config) && inference.sourceId === source.id && inference.model === expected.model && inference.modelRevision === expected.modelRevision
+    && (['preprocessing', 'query', 'textHash', 'sourceHash'] as const).every(key => inference[key] === undefined || inference[key] === expected[key]);
+}
 export async function submitInference(source: Source, config: RunpodConfig, fetcher: typeof fetch = fetch): Promise<Inference> {
-  if (!configured(config)) return { id: randomUUID(), sourceId: source.id, status: 'unconfigured', mode: 'none', score: null, model: MODEL, modelRevision: config.revision || null, jobId: null, createdAt: new Date().toISOString(), error: 'Configure RUNPOD_API_KEY, RUNPOD_ENDPOINT_ID and a pinned RUNPOD_MODEL_REVISION before running inference.' };
-  const response = await fetcher('https://api.runpod.ai/v2/' + config.endpoint + '/run', { method: 'POST', headers: { Authorization: 'Bearer ' + config.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ input: { source_hash: source.hash, text: source.excerpt.slice(0, 2000), query: RELEVANCE_QUERY, model: MODEL, revision: config.revision, preprocessing: PREPROCESSING }, policy: { executionTimeout: 120000, ttl: 600000 } }), signal: AbortSignal.timeout(20000) });
+  if (!configured(config)) return { id: randomUUID(), sourceId: source.id, status: 'unconfigured', mode: 'none', score: null, ...inferenceProvenance(source, config), jobId: null, createdAt: new Date().toISOString(), error: 'Configure RUNPOD_API_KEY, RUNPOD_ENDPOINT_ID and a pinned RUNPOD_MODEL_REVISION before running inference.' };
+  const text = inferenceText(source);
+  if (text.trim().length < MIN_INFERENCE_TEXT_LENGTH || !/^[0-9a-f]{64}$/.test(source.hash) || /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u.test(text)) throw new Error('Public source text or provenance is incomplete');
+  const response = await fetcher('https://api.runpod.ai/v2/' + config.endpoint + '/run', { method: 'POST', redirect: 'error', headers: { Authorization: 'Bearer ' + config.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ input: { source_hash: source.hash, text_hash: hash(text), text, query: RELEVANCE_QUERY, model: MODEL, revision: config.revision, preprocessing: PREPROCESSING }, policy: { executionTimeout: 120000, ttl: 600000 } }), signal: AbortSignal.timeout(20000) });
   const body = JSON.parse(await boundedText(response, 50000));
-  if (typeof body.id !== 'string' || !/^[\w-]+$/.test(body.id)) throw new Error('RunPod returned no valid job identifier');
-  return { id: cacheKey(source, config), sourceId: source.id, status: 'pending', mode: 'live', score: null, model: MODEL, modelRevision: config.revision!, jobId: body.id, createdAt: new Date().toISOString(), error: null };
+  if (!body || typeof body.id !== 'string' || !/^[\w-]{1,200}$/.test(body.id)) throw new Error('RunPod returned no valid job identifier');
+  if (!['IN_QUEUE', 'IN_PROGRESS', 'COMPLETED', 'FAILED', 'CANCELLED', 'TIMED_OUT'].includes(body.status)) throw new Error('RunPod returned an unrecognised submission status');
+  // Even an immediate result is fetched through /status and fully validated there.
+  return { id: cacheKey(source, config), sourceId: source.id, status: 'pending', mode: 'live', score: null, ...inferenceProvenance(source, config), endpointId: config.endpoint, jobId: body.id, createdAt: new Date().toISOString(), error: null };
 }
 export async function pollInference(inference: Inference, source: Source, config: RunpodConfig, fetcher: typeof fetch = fetch): Promise<Inference> {
-  if (!inference.jobId || !configured(config)) throw new Error('Inference is not configured');
-  if (inference.status !== 'pending' || inference.mode !== 'live' || inference.id !== cacheKey(source, config) || inference.sourceId !== source.id || inference.model !== MODEL || inference.modelRevision !== config.revision) throw new Error('Pending inference does not match the current source and model configuration');
-  const response = await fetcher('https://api.runpod.ai/v2/' + config.endpoint + '/status/' + inference.jobId, { headers: { Authorization: 'Bearer ' + config.key }, signal: AbortSignal.timeout(15000) });
+  if (!inference.jobId || !/^[\w-]{1,200}$/.test(inference.jobId) || !configured(config)) throw new Error('Inference is not configured');
+  if (inference.endpointId && inference.endpointId !== config.endpoint) throw new Error('Pending inference belongs to a different RunPod endpoint');
+  if (inference.status !== 'pending' || inference.mode !== 'live' || !matchesInferenceContext(inference, source, config)) throw new Error('Pending inference does not match the current source and model configuration');
+  const response = await fetcher('https://api.runpod.ai/v2/' + config.endpoint + '/status/' + inference.jobId, { redirect: 'error', headers: { Authorization: 'Bearer ' + config.key }, signal: AbortSignal.timeout(15000) });
   const body = JSON.parse(await boundedText(response, 50000));
-  if (body.id !== inference.jobId) throw new Error('RunPod returned a different job identifier');
+  if (!body || body.id !== inference.jobId) throw new Error('RunPod returned a different job identifier');
   if (body.status === 'COMPLETED') {
     const output = body.output;
-    if (!output || typeof output.score !== 'number' || !Number.isFinite(output.score) || output.score < -1 || output.score > 1 || output.model !== MODEL || output.revision !== config.revision || output.source_hash !== source.hash || output.device !== 'cuda' || output.preprocessing !== PREPROCESSING || output.query !== RELEVANCE_QUERY) throw new Error('RunPod output failed provenance or GPU validation');
-    return { ...inference, status: 'completed', score: output.score, error: null };
+    if (!output || typeof output.score !== 'number' || !Number.isFinite(output.score) || output.score < -1 || output.score > 1 || output.model !== MODEL || output.revision !== config.revision || output.source_hash !== source.hash || output.text_hash !== hash(inferenceText(source)) || output.device !== 'cuda' || output.preprocessing !== PREPROCESSING || output.query !== RELEVANCE_QUERY) throw new Error('RunPod output failed provenance or GPU validation');
+    return { ...inference, ...inferenceProvenance(source, config), status: 'completed', score: output.score, error: null };
   }
   if (['FAILED', 'CANCELLED', 'TIMED_OUT'].includes(body.status)) return { ...inference, status: 'failed', error: 'Provider job ended: ' + body.status };
   if (!['IN_QUEUE', 'IN_PROGRESS'].includes(body.status)) throw new Error('RunPod returned an unrecognised job status');

@@ -1,6 +1,6 @@
 # ShiftBridge submission draft pack — Console
 
-Prepared 21 October 2026 for Domain 1 AIVERSECITY. Participant: **Tan King Yang**, **UTAR**, **solo team Console**. Email and phone are intentionally absent from these repository documents; they belong only in the private official PDFs where required.
+Draft text updated 23 October 2026 for Domain 1 AIVERSECITY. Existing rendered PDF/deck artifacts remain the earlier unsigned drafts until regenerated. Participant: **Tan King Yang**, **UTAR**, **solo team Console**. Email and phone are intentionally absent from these repository documents; they belong only in the private official PDFs where required.
 
 This pack contains complete draft responses to the supplied template sections, plus evidence mapping and presentation copy. It is not an uploaded submission or a claim that the unresolved declarations have been confirmed. Codex assists the participant; it is not the competition host or entrant.
 
@@ -28,9 +28,9 @@ Required PDF names: **SDC2026_Console_Preliminary.pdf** and **SDC2026_Console_Te
 
 **Editable deck prepared:** the eight-slide PowerPoint draft includes actual application screenshots, editable comparison/practice tables and source notes. All eight slides were rendered from the exported file and visually inspected. Structural, font, slide-count and layout checks passed. Native Microsoft PowerPoint behavior was not tested; the participant should rehearse in the intended presentation app and approve the final content.
 
-**External deliverables still needed:** verified public/judge-accessible source link; final participant review of the deck; 5–7 minute recorded YouTube pitch/demo; final signed PDFs; final accessible prototype and platform proof. Replit/RunPod remain deferred at the participant’s request. The draft discloses that status and does not claim an official exemption.
+**External deliverables still needed:** verified public/judge-accessible source link; final participant review of the deck; 5–7 minute recorded YouTube pitch/demo; final signed PDFs; final accessible prototype and platform proof. Platform setup has resumed within the existing credits. The RunPod container built successfully, the app accepted a live Intel-passage result, and six synthetic triage jobs completed. The latest Replit app still needs hosted verification. The draft does not claim an official exemption.
 
-**No live runtime AI:** current matching/planning is deterministic and interpretations are human-reviewed. Codex/Gemini assistance in development is separately declared. A prepared model adapter is not executed inference. No measured worker, employment, planning-time, compliance-certification or model-accuracy result is asserted.
+**Live relevance inference verified on limited cases:** current matching/planning is deterministic and interpretations are human-reviewed. Codex/Gemini assistance in development is separately declared. One real public-passage result and six synthetic triage results completed with matching provenance. This is execution evidence and a tiny smoke evaluation, not a representative model benchmark. No measured worker, employment, planning-time, compliance-certification or model-accuracy result is asserted.
 
 ## Baseline study sheet
 

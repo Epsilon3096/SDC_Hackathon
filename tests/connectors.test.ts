@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ARXIV_URL, ARXIV_RSS_URL, MODEL, PREPROCESSING, RELEVANCE_QUERY, boundedText, cacheKey, configured, fetchArxiv, mergeSourceBatch, parseArxiv, parseArxivRss, pollInference, submitInference } from '../src/server/connectors';
+import { ARXIV_URL, ARXIV_RSS_URL, MODEL, PREPROCESSING, RELEVANCE_QUERY, boundedText, cacheKey, configured, fetchArxiv, inferenceText, mergeSourceBatch, parseArxiv, parseArxivRss, pollInference, submitInference } from '../src/server/connectors';
 import type { Inference } from '../src/shared/types';
+import { hash } from '../src/server/store';
 
 const retrievedAt = '2026-10-21T06:00:00.000Z';
 const feed = (overrides: Partial<Record<'id' | 'title' | 'summary' | 'published' | 'updated', string>> = {}) => {
@@ -10,7 +11,7 @@ const feed = (overrides: Partial<Record<'id' | 'title' | 'summary' | 'published'
 const source = parseArxiv(feed(), retrievedAt)[0];
 const config = { key: 'test-only-placeholder', endpoint: 'test-endpoint', revision: 'a'.repeat(40) };
 const pending = (): Inference => ({ id: cacheKey(source, config), sourceId: source.id, model: MODEL, modelRevision: config.revision, jobId: 'job-123', status: 'pending', mode: 'live', score: null, createdAt: retrievedAt, error: null });
-const output = () => ({ score: 0.72, model: MODEL, revision: config.revision, source_hash: source.hash, device: 'cuda', preprocessing: PREPROCESSING, query: RELEVANCE_QUERY });
+const output = () => ({ score: 0.72, model: MODEL, revision: config.revision, source_hash: source.hash, text_hash: hash(inferenceText(source)), device: 'cuda', preprocessing: PREPROCESSING, query: RELEVANCE_QUERY });
 const transport = (body: unknown) => vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }));
 const rssItem = (overrides: Partial<Record<'title' | 'link' | 'description' | 'pubDate' | 'arxiv:announce_type', string>> = {}) => {
   const item = { title: 'Industrial defect inspection research', link: 'https://arxiv.org/abs/2106.08265', description: 'arXiv:2106.08265v2 Announce Type: replace Abstract: Research on industrial inspection and anomaly detection.', pubDate: 'Wed, 21 Oct 2026 00:00:00 -0400', 'arxiv:announce_type': 'replace', ...overrides };
@@ -164,6 +165,8 @@ describe('RunPod relevance provenance (mock transports only)', () => {
   it('never calls the provider when configuration is absent or unpinned', async () => {
     const fake = vi.fn<typeof fetch>();
     expect(configured({ ...config, revision: 'main' })).toBe(false);
+    expect(configured({ ...config, revision: 'A'.repeat(40) })).toBe(false);
+    expect(configured({ ...config, key: '   ' })).toBe(false);
     expect(configured({ ...config, endpoint: '../other' })).toBe(false);
     const result = await submitInference(source, {}, fake);
     expect(result).toMatchObject({ status: 'unconfigured', mode: 'none', score: null, jobId: null });
@@ -172,17 +175,42 @@ describe('RunPod relevance provenance (mock transports only)', () => {
   it('submits a bounded job with the expected provenance and no automatic relevance verdict', async () => {
     const fake = transport({ id: 'job-123', status: 'IN_QUEUE' });
     const result = await submitInference(source, config, fake);
-    expect(result).toMatchObject({ id: cacheKey(source, config), status: 'pending', mode: 'live', score: null, jobId: 'job-123' });
+    expect(result).toMatchObject({ id: cacheKey(source, config), status: 'pending', mode: 'live', score: null, jobId: 'job-123', endpointId: config.endpoint, model: MODEL, modelRevision: config.revision, preprocessing: PREPROCESSING, query: RELEVANCE_QUERY, textHash: hash(inferenceText(source)), sourceHash: source.hash });
     const body = JSON.parse(fake.mock.calls[0][1]?.body as string);
-    expect(body.input).toMatchObject({ source_hash: source.hash, revision: config.revision, query: RELEVANCE_QUERY, preprocessing: PREPROCESSING });
+    expect(body.input).toMatchObject({ source_hash: source.hash, text_hash: hash(inferenceText(source)), revision: config.revision, query: RELEVANCE_QUERY, preprocessing: PREPROCESSING });
     expect(body.input.text.length).toBeLessThanOrEqual(2000);
+    expect(fake.mock.calls[0][1]).toMatchObject({ redirect: 'error' });
+    expect(body.policy).toEqual({ executionTimeout: 120000, ttl: 600000 });
+  });
+  it('preserves Unicode surrogate pairs and hashes exactly the text sent to the worker', async () => {
+    const unicode = { ...source, excerpt: '工😀'.repeat(1500) };
+    const fake = transport({ id: 'job-unicode', status: 'IN_QUEUE' });
+    await submitInference(unicode, config, fake);
+    const body = JSON.parse(fake.mock.calls[0][1]?.body as string);
+    expect(Array.from(body.input.text)).toHaveLength(2000);
+    expect(body.input.text).toBe('工😀'.repeat(1000));
+    expect(body.input.text_hash).toBe(hash(body.input.text));
+    expect(cacheKey(unicode, config)).not.toBe(cacheKey(source, config));
+  });
+  it.each(['', '  ', 'too short', '\uD800 broken surrogate'])('rejects incomplete public text before any paid call %#', async excerpt => {
+    const fake = vi.fn<typeof fetch>();
+    await expect(submitInference({ ...source, excerpt }, config, fake)).rejects.toThrow('incomplete');
+    expect(fake).not.toHaveBeenCalled();
+  });
+  it.each([null, {}, { id: '../bad', status: 'IN_QUEUE' }, { id: 'a'.repeat(201), status: 'IN_QUEUE' }, { id: 'job-123', status: 'MYSTERY' }])('rejects ambiguous provider submission acknowledgement %#', async body => {
+    await expect(submitInference(source, config, transport(body))).rejects.toThrow('RunPod returned');
   });
   it('accepts a matching completed GPU result', async () => {
     const result = await pollInference(pending(), source, config, transport({ id: 'job-123', status: 'COMPLETED', output: output() }));
-    expect(result).toMatchObject({ status: 'completed', mode: 'live', score: 0.72 });
+    expect(result).toMatchObject({ status: 'completed', mode: 'live', score: 0.72, preprocessing: PREPROCESSING, query: RELEVANCE_QUERY, textHash: hash(inferenceText(source)), sourceHash: source.hash });
+  });
+  it.each(['preprocessing', 'query', 'textHash', 'sourceHash'] as const)('rejects a contradictory saved %s before polling even when the cache key matches', async field => {
+    const fake = vi.fn<typeof fetch>();
+    await expect(pollInference({ ...pending(), [field]: 'different-context' }, source, config, fake)).rejects.toThrow('current source');
+    expect(fake).not.toHaveBeenCalled();
   });
   it.each([
-    ['source_hash', 'different-source'], ['revision', 'b'.repeat(40)], ['model', 'other-model'], ['preprocessing', 'other'], ['query', 'retail chatbots'], ['device', 'cpu'], ['score', 1.01], ['score', '0.72'],
+    ['source_hash', 'different-source'], ['text_hash', 'wrong-exact-text'], ['revision', 'b'.repeat(40)], ['model', 'other-model'], ['preprocessing', 'other'], ['query', 'retail chatbots'], ['device', 'cpu'], ['score', 1.01], ['score', '0.72'],
   ])('rejects completed output with mismatched %s', async (field, value) => {
     await expect(pollInference(pending(), source, config, transport({ id: 'job-123', status: 'COMPLETED', output: { ...output(), [field]: value } }))).rejects.toThrow('provenance');
   });
@@ -194,6 +222,8 @@ describe('RunPod relevance provenance (mock transports only)', () => {
     const fake = vi.fn<typeof fetch>();
     await expect(pollInference(pending(), { ...source, hash: 'changed-content' }, config, fake)).rejects.toThrow('current source');
     await expect(pollInference(pending(), source, { ...config, revision: 'b'.repeat(40) }, fake)).rejects.toThrow('current source');
+    await expect(pollInference({ ...pending(), endpointId: 'old-endpoint' }, source, config, fake)).rejects.toThrow('different RunPod endpoint');
+    await expect(pollInference({ ...pending(), jobId: '../other' }, source, config, fake)).rejects.toThrow('not configured');
     expect(fake).not.toHaveBeenCalled();
   });
   it('keeps queued jobs pending and records provider failures without inventing scores', async () => {
