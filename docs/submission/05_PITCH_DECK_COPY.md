@@ -86,6 +86,6 @@ Presenter note: insert the actual final test count/log if desired. Do not reuse 
 
 Next evidence: independent synthetic-task usability baseline, intended-worker/adviser feedback and a verified final deployment. Draft pilot target: 30% lower median planning time without lower task correctness; **not an achieved result**.
 
-**[Verified prototype link] · [Verified repository] · Console · Tan King Yang · UTAR**
+**[Prototype verification pending] · [Public source repository](https://github.com/Epsilon3096/SDC_Hackathon) · Console · Tan King Yang · UTAR**
 
 Footer: Codex provided substantial assistance; Gemini provided strategic critique. The participant team owns the entry, understands the implementation and signs the declarations. Confirm that human ownership before presenting it as completed.

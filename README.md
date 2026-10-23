@@ -1,8 +1,31 @@
 # ShiftBridge
 
-A focused workforce planning prototype for Malaysian manufacturing quality inspectors. Built for SDC Domain 1. React + TypeScript, Fastify and PostgreSQL; optional RunPod relevance inference.
+A workforce learning planner for Malaysian manufacturing quality inspectors, built for SDC Domain 1. Review dated evidence, compare explainable skill gaps and choose a practical learning plan.
 
 The HTML produced during ideation is a separate design reference. This directory is the actual application.
+
+[Public source repository](https://github.com/Epsilon3096/SDC_Hackathon) · [Verified CI run](https://github.com/Epsilon3096/SDC_Hackathon/actions/runs/39939758010)
+
+[![Verify ShiftBridge](https://github.com/Epsilon3096/SDC_Hackathon/actions/workflows/verify.yml/badge.svg)](https://github.com/Epsilon3096/SDC_Hackathon/actions/workflows/verify.yml)
+
+Anonymous repository access and all six CI jobs passed at commit `71489cc`, with eight commits preserved. Public app publishing awaits dependency-security remediation and rescanning; no live demo URL is claimed yet.
+
+## Three-minute judge orientation
+
+Run `npm ci`, then `npm run dev`, and open `http://127.0.0.1:5173`. No API key is needed for the synthetic planning walkthrough. Start **Guided demo** for the constructed Farid case, inspect the Intel passage, and follow the review, publication and explicit adoption milestones.
+
+| Page | What to inspect |
+| --- | --- |
+| Overview | Current decision and next action |
+| My profile | Skills, unknowns, qualifications, time and budget |
+| Skills radar | Six selected skills and visible gaps |
+| Explore roles | Explainable alignment and separate entry requirements |
+| My learning plan | Ordered steps, practice feedback and voluntary return to the plan |
+| What changed | Old/new priorities and explicit adoption |
+| My contribution | SDG explanations and unmeasured-impact limits |
+| Evidence studio | Source triage, human review, separate publication and history |
+
+Architecture: React/TypeScript calls a Fastify API backed by PostgreSQL. arXiv supplies source candidates. RunPod embeds bounded public passages for reading triage; deterministic code ranks learning directions and human review controls evidence publication.
 
 ## Try the guided demonstration
 
@@ -18,7 +41,7 @@ No key or external database is required locally. PGlite runs embedded PostgreSQL
 
 `npm test` runs domain, API and connector tests. `npm run build` checks TypeScript and builds the client. `npm start` serves the built client and API together. `npm run ingest` performs a real read-only arXiv fetch/validation probe; use Evidence Studio to save fetched articles in a workspace.
 
-`npm run verify` runs the test suite, production build and built-app smoke check. The prepared GitHub workflow checks Node 22/24 on Windows/Linux and has a separate disposable PostgreSQL job; it has not yet run on GitHub. See `docs/OPERATIONS.md` for the exact checks and real-data pilot gates.
+`npm run verify` runs the test suite, production build and built-app smoke check. All six jobs in the linked CI run passed: four Windows/Linux and Node 22/24 jobs, the 11-test Python worker job, and the PostgreSQL 17 job with all 11 database/configuration checks, including the three real-PostgreSQL checks skipped by default locally. See `docs/OPERATIONS.md` for the exact checks and real-data pilot gates.
 
 ## Submission materials
 
@@ -43,7 +66,7 @@ Gemini provided ideas-only reviews on 21 and 23 October. Three intervening attem
 
 ## Replit
 
-Development and platform setup are proceeding within the participant's existing US$20 Replit and US$25 RunPod credits. Source commit `b9e1365` was uploaded to Replit with all 96 files verified, and its 257-test suite, production build and smoke test passed there. Later practice-navigation and warning improvements are locally verified and require the next upload. A RunPod queue endpoint was created from the private worker repository and its container built successfully. A completed Intel-passage GPU result was accepted by the app and six synthetic triage jobs completed. A final public application deployment remains unverified. Keeping source in Replit is not, by itself, verified competition proof of use.
+Development and platform setup are proceeding within the participant's existing US$20 Replit and US$25 RunPod credits. Replit commit `423bf15`, including the practice-navigation and warning improvements, passed 257 tests with three optional PostgreSQL tests skipped, the production build and built-app smoke. The Autoscale target change from `71489cc` was then applied. A RunPod queue endpoint was created from the private worker repository and its container built successfully. A completed Intel-passage GPU result was accepted by the app and six synthetic triage jobs completed. Public application deployment is blocked by the dependency-security review described in `docs/DEPLOYMENT.md`; remediation and rescanning remain pending. Keeping source in Replit is not, by itself, verified competition proof of use.
 
 The 23 October local checkpoint passed 257 application tests, with three optional real-PostgreSQL tests skipped, plus TypeScript checking, the production build, built-app smoke test and 11 offline Python worker tests. See `docs/BUILD_STATUS.md` for dated evidence and remaining release gates. Scan source with `python scripts/package-release.py --scan-only`; after committing verified source, create a new archive with `python scripts/package-release.py --output ../ShiftBridge_Replit_Source_23Oct.zip`.
 

@@ -6,7 +6,7 @@ Counts use conservative whitespace-separated tokens within the marked response b
 | --- | ---: | ---: | --- |
 | P2.1 | 201 | 250 | Pass |
 | P2.2 | 262 | 300 | Pass |
-| P3.2 | 196 | 200 | Pass |
+| P3.2 | 197 | 200 | Pass |
 | T2.1 | 182 | 200 | Pass |
 | T4.3 | 88 | 100 | Pass |
 | T5 | 89 | 100 | Pass |

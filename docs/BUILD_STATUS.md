@@ -21,6 +21,12 @@ The QA exercise was completed in the local browser: TP 6, TN 9, FP 3, FN 2; miss
 
 After three failed attempts on 22 October, a new ideas-only Gemini review succeeded on 23 October. The voluntary practice-to-plan action and explicit warning about negated/vocabulary-matching passages were applied; unvalidated thresholds and invented results were rejected. The four changed UI files passed 56 relevant tests and the production build. Browser verification moved focus to “Your learning steps” on `#pathway` while preserving 25% / one of four completed steps. See `GEMINI_REVIEW.md`.
 
+## Public source and CI — 23 October
+
+The full application repository is [Epsilon3096/SDC_Hackathon](https://github.com/Epsilon3096/SDC_Hackathon). Anonymous access was verified and all eight commits through `71489cc` were preserved. [CI run 39939758010](https://github.com/Epsilon3096/SDC_Hackathon/actions/runs/39939758010) passed all six jobs: four Windows/Linux and Node 22/24 combinations (257 tests, three optional real-PostgreSQL checks skipped per matrix job, build and smoke), 11 Python worker checks, and all 11 PostgreSQL 17 database/configuration checks including the three real-database checks. These results precede the in-progress dependency remediation.
+
+**Current publication gate:** Replit's publication scan flagged a critical finding involving Transformers 4.57.6 and a certifi finding. Dependency remediation, the worker contract update, a rebuilt container, rescanning and renewed live verification are in progress. No resolved finding or public deployment is claimed. The seven recorded GPU jobs remain historical execution evidence for their recorded v2 preprocessing contract. A Node-only audit cannot establish Python/container dependency safety.
+
 ## Earlier local checkpoint — 21 October
 
 The following observations describe the previous release. They remain historical evidence, not verification of a new hosted release.
@@ -50,15 +56,15 @@ The following observations describe the previous release. They remain historical
 
 ## Replit development verification
 
-The participant has resumed setup using existing **US$20 Replit and US$25 RunPod credits**. The earlier platform deferral no longer applies. No new subscription, top-up or spending above those balances is authorised. Credits do not themselves prove a deployment or enforce a provider spending cap. The 23 October Replit checkpoint covers commit `b9e1365`; the later Gemini-inspired UI refinements still need an updated upload.
+The participant has resumed setup using existing **US$20 Replit and US$25 RunPod credits**. The earlier platform deferral no longer applies. No new subscription, top-up or spending above those balances is authorised. Credits do not themselves prove a deployment or enforce a provider spending cap. The latest completed Replit verification covers commit `423bf15`, including the Gemini-inspired UI refinements. The explicit Autoscale target from `71489cc` was then applied.
 
-- Source commit `b9e1365` was uploaded into https://replit.com/@kingyang3096/ShiftBridge. All 96 package files and the pre-update backup were verified.
+- Source commit `b9e1365` was initially uploaded into https://replit.com/@kingyang3096/ShiftBridge with all 96 package files and the backup verified. Commit `423bf15` then supplied the UI/documentation updates and passed the hosted verification below.
 - `npm run verify` passed in the actual Replit environment: 257 tests passed, three optional PostgreSQL tests skipped, and TypeScript/Vite build plus built-app smoke passed. The earlier platform-specific temporary-directory failure did not recur.
 - Node 22.22.0 runs the production build and Fastify on port 3001 with managed PostgreSQL. The HTTPS startup configuration includes Replit development environments.
 - A synthetic worker plan was saved through the standalone HTTPS preview and its first step completed. After the server restarted, the saved plan still showed 1 of 4 steps complete (25%).
 - Publishing controls have since become available, but no new public production deployment or final judge-accessible URL has been verified. The development preview depends on the workspace runtime and is not a stable submission link.
 - Existing Replit Core displayed an expiry of 22 November 2026; US$20 usage credit was confirmed and credit auto-reload was off. The reviewer secret and three RunPod settings were saved privately.
-- Public deployment is configured for Autoscale, one CPU, 1 GiB RAM, maximum one instance, Asia, and a fresh production database with no development data copied. `PUBLIC_ORIGIN` is set to the planned `https://shift-bridge-kingyang3096.replit.app` origin. It is not yet published or verified as a judge-accessible link.
+- Public deployment is configured for Autoscale, one CPU, 1 GiB RAM, maximum one instance, Asia, and a fresh production database with no development data copied. `PUBLIC_ORIGIN` is set to the planned `https://shift-bridge-kingyang3096.replit.app` origin. Publication is blocked by the dependency-security gate above; this is not a verified judge-accessible link.
 
 ## RunPod — initial live execution verified
 
@@ -66,17 +72,17 @@ Executable worker source was uploaded to the private [Epsilon3096/shiftbridge-in
 
 The app accepted the completed Intel-passage GPU result with model/revision/preprocessing/source/text provenance. Provider delay was 61,368 ms, execution 3,314 ms, and cosine similarity 0.6027023196220398. Six declared synthetic triage cases then completed on CUDA; both direct inspection cases scored above both unrelated cases (4/4 pair comparisons). This is a tiny constructed smoke result, not accuracy, calibration, a production latency benchmark or employment evidence. No 0.65 threshold is applied.
 
-See [RUNPOD_VERIFICATION.md](RUNPOD_VERIFICATION.md) and the retained provider JSON under `docs/evidence/` for exact jobs/results. Actual billed-usage inspection, the later UI upload, public deployment, judge access and broader model evaluation remain outstanding. The private worker repository is not the full application's public submission link.
+See [RUNPOD_VERIFICATION.md](RUNPOD_VERIFICATION.md) and the retained provider JSON under `docs/evidence/` for exact jobs/results. Security remediation and renewed worker verification, public deployment, judge prototype access and broader model evaluation remain outstanding. The private worker repository is not the full application's public submission link.
 
 ## Remaining boundaries
 
 - Mobile browser verification covers one 390px viewport, not a physical device or a complete assistive-technology audit.
-- Commit `b9e1365` passed hosted checks. Later UI refinements still need upload; a published production deployment and new-session access need separate verification. See DEPLOYMENT.md.
+- Commit `423bf15` passed hosted checks. Current dependency/contract changes require renewed checks. Publication and new-session access remain blocked/pending as described in DEPLOYMENT.md.
 - Initial RunPod execution is verified as described above. The existing-credit budget remains in force; inspect actual usage and retain zero active/max one worker settings. Local contract tests and the tiny live smoke set do not prove general model quality.
 - Personas and practice datasets are synthetic. Role requirements and weights are transparent prototype assumptions, not universal hiring standards. Adjacent-role qualification requirements remain unverified.
 - New Intel mappings are QA-scoped. Older mappings without stored scope preserve their historical all-route behaviour and display a legacy label; correcting an old published scope requires retirement and replacement, not silent rewriting.
 - Four-hour learning blocks are team planning estimates. No measured time-saving or employment outcome is claimed; the evaluation protocol is prepared for real participants.
-- Submission documents and the editable deck are dated drafts that predate these improvements. Final human declarations/signatures, workshop confirmation, numeric impact baseline, full source repository access, actual recording, judge-access links and sponsor-compliance verification remain outstanding. No online submission has occurred. Initial runtime relevance inference is now evidenced separately from AI-assisted coding; final sponsor-compliance review is still required.
+- Submission documents and the editable deck are dated drafts that predate these improvements. Final human declarations/signatures, workshop confirmation, numeric impact baseline, actual recording, final prototype/video access and sponsor-compliance verification remain outstanding. No online submission has occurred. Initial runtime relevance inference is now evidenced separately from AI-assisted coding; final sponsor-compliance review is still required.
 - Public submission Markdown was reconciled to the 23 October checkpoint and its eight bounded responses rechecked. Existing rendered private PDFs and deck remain the earlier drafts; regenerate them after final platform verification. Private email and phone belong only in the private official forms, not the public source package. The confirmed team is Console, a solo entry by Tan King Yang at UTAR; an ellipsis does not confirm workshop completion or declarations.
 - Reviewed materials conflict about the time on 25 October 2026. The conservative internal completion target remains 24 October until the current official cutoff is confirmed. This record does not re-verify organiser announcements or resolve sponsor/workshop conditionality.
 - Commercial use with real worker data is not ready. Server-side session expiry/revocation, accounts and named reviewers, organisation access, retention/deletion/recovery, tested backups, monitoring and independent occupational/user validation are release gates in OPERATIONS.md.

@@ -1,6 +1,6 @@
 # Release verification and pilot operations
 
-Status as of 23 October 2026: local synthetic demonstration release, not a commercially launched service. The participant has ended the earlier Replit/RunPod deferral and authorised setup within the existing US$20 Replit and US$25 RunPod credit budgets. No new subscription or top-up is authorised. Commit `b9e1365` passed Replit verification (257 tests, three optional PostgreSQL tests skipped, production build and built-app smoke); later UI refinements need an updated upload; the remote container build, an application-accepted Intel-passage GPU result and six synthetic triage cases are verified. A new public app deployment remains unverified. Do not treat a prepared workflow, guide, private repository or local test as evidence it ran on an external platform. See [DEPLOYMENT.md](DEPLOYMENT.md) and [runpod/README.md](../runpod/README.md).
+Status as of 23 October 2026: local synthetic demonstration release, not a commercially launched service. The participant has ended the earlier Replit/RunPod deferral and authorised setup within the existing US$20 Replit and US$25 RunPod credit budgets. No new subscription or top-up is authorised. Commit `423bf15` passed Replit verification (257 tests, three optional PostgreSQL tests skipped, production build and built-app smoke), and the Autoscale target from `71489cc` was applied; the remote container build, an application-accepted Intel-passage GPU result and six synthetic triage cases are verified. Public deployment is blocked by dependency-security findings; remediation remains in progress. Do not treat a prepared workflow, guide, private repository or local test as evidence it ran on an external platform. See [DEPLOYMENT.md](DEPLOYMENT.md) and [runpod/README.md](../runpod/README.md).
 
 ## Reproduce a release
 
@@ -13,13 +13,17 @@ Status as of 23 October 2026: local synthetic demonstration release, not a comme
 
 The built-app smoke check uses disposable in-memory PostgreSQL and no external APIs. It verifies production asset references and delivery, practice CSV availability, API JSON errors, secure/no-store session responses, captured plan persistence, independent visitor state and denied cross-origin writes. It does not exercise a real TLS proxy or commercial database backup.
 
-## Prepared continuous verification
+## Continuous verification
 
 `.github/workflows/verify.yml` runs Node 22/24 on Linux/Windows, with dependency installation from the lockfile, the release verification command and a production dependency audit. A separate job runs PostgreSQL 17 transaction checks against an isolated disposable service.
 
 The PostgreSQL suite is skipped unless `SHIFTBRIDGE_TEST_DATABASE_URL` is explicitly set. It requires a loopback database named `shiftbridge_ci`, creates a random test-only schema, and removes only that schema after closing its pools. Never point it at a production database. The suite checks independent-pool locking, rollback, reconnect persistence and stale rehearsal generations. Local PGlite checks do not substitute for a successful run of this job.
 
-The workflow is prepared locally. Until a public repository contains the source and GitHub reports completed checks, do not claim CI passed. References: [GitHub Node workflow documentation](https://docs.github.com/en/actions/tutorials/build-and-test-code/nodejs), [PostgreSQL service containers](https://docs.github.com/en/actions/tutorials/use-containerized-services/create-postgresql-service-containers).
+The [public repository](https://github.com/Epsilon3096/SDC_Hackathon) was verified without owner credentials, preserving eight commits through `71489cc`. All six jobs in [CI run 39939758010](https://github.com/Epsilon3096/SDC_Hackathon/actions/runs/39939758010) passed: four OS/Node matrix jobs, 11 worker tests, and all 11 PostgreSQL 17 database/configuration checks including the three real-database checks skipped by default locally. This run predates the in-progress dependency/worker-contract remediation; rerun checks on the final revision. References: [GitHub Node workflow documentation](https://docs.github.com/en/actions/tutorials/build-and-test-code/nodejs), [PostgreSQL service containers](https://docs.github.com/en/actions/tutorials/use-containerized-services/create-postgresql-service-containers).
+
+## Current publication security gate
+
+Replit's publication scan flagged a critical finding involving Transformers 4.57.6 and a certifi finding. Dependency remediation, the worker contract update, a rebuilt container, rescanning and renewed live verification are in progress. No resolved finding or public deployment is claimed. The seven recorded GPU jobs remain historical execution evidence for their recorded v2 preprocessing contract. The Node production dependency audit does not cover Python or container dependencies. Preserve the existing GPU reports and distinguish any new worker-contract execution from them.
 
 ## Current data and recovery behaviour
 

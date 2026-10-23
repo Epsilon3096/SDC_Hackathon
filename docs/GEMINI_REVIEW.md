@@ -22,7 +22,7 @@ The independent code and product review found useful further work: source-level 
 
 Gemini incorrectly named **bge-base**; the executed model is **BAAI/bge-large-en-v1.5**. Its “17/20 classifications” and “Module 3” examples were invented illustrations, not results from this project. They were not adopted. “Diagnostic readiness” would overstate this teaching exercise and was also rejected. The review is useful input, not prize prediction, certification or an assertion that there is no remaining room to improve.
 
-The four-file UI follow-through passed 56 relevant tests and the production build. Its voluntary navigation was browser-checked. The separately recorded Replit verification is for source commit `b9e1365`; these later UI changes require an updated upload before their hosted behavior can be claimed.
+The four-file UI follow-through passed 56 relevant tests and the production build. Its voluntary navigation was browser-checked. The full local suite then passed, and Replit commit `423bf15`, including these UI changes, passed 257 tests/build/smoke. Public deployment remains subject to the separate dependency-security gate in `DEPLOYMENT.md`.
 
 ## Earlier 21 October suggestions accepted and adapted
 

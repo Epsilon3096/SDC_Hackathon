@@ -12,7 +12,7 @@ Draft text updated 23 October 2026; the earlier rendered PDF must be regenerated
 | Leader email and phone | Supplied separately for the private official PDF; intentionally omitted here. |
 | University affiliation(s) | UTAR |
 | Live prototype URL | **REQUIRED EXTERNAL INPUT — no verified stable production URL for the current version.** Local application is runnable; Replit publishing is in preparation. An earlier development preview is not a stable judge link. |
-| Code repository URL, public or judge access | **REQUIRED EXTERNAL INPUT — no verified public/judge-accessible repository URL in this pack.** |
+| Code repository URL, public or judge access | [Epsilon3096/SDC_Hackathon](https://github.com/Epsilon3096/SDC_Hackathon). Public anonymous access verified; eight commits through `71489cc` preserved. Maintain access throughout judging. |
 
 ## 2. Architecture and technology stack
 
@@ -23,7 +23,7 @@ The React/TypeScript interface calls a Fastify API. Synthetic worker profiles, p
 
 The arXiv connector fetches and validates Atom metadata, with an RSS fallback. Source content is untrusted. A reviewer selects an exact passage, records an interpretation and role scope, then approves it. A separate publication operation produces a new snapshot. Deterministic TypeScript code calculates skill alignment, qualification status and prerequisite-aware learning priorities. The worker explicitly adopts a plan; its original assessment, profile and constraints are captured for later export.
 
-An isolated rehearsal uses the same API operations with synthetic data and generation guards. It does not execute paid inference. RunPod performs bounded public-passage relevance triage. The app accepted one live Intel-passage result; six declared synthetic cases also completed. Similarity never publishes evidence or ranks workers. Replit commit `b9e1365` passed tests/build/smoke; later UI refinements and production publication remain pending. Validation includes automated tests and browser exercises, while human usability and workforce validation remain outstanding.
+An isolated rehearsal uses the same API operations with synthetic data and generation guards. It does not execute paid inference. RunPod performs bounded public-passage relevance triage. The app accepted one live Intel-passage result; six declared synthetic cases also completed. Similarity never publishes evidence or ranks workers. Replit commit `423bf15` passed tests/build/smoke. Publication awaits Transformers/certifi security remediation and renewed verification. Validation includes automated tests and browser exercises, while human usability and workforce validation remain outstanding.
 <!-- /word-limit -->
 
 A system block diagram appears in proposal section 3.1.
@@ -50,9 +50,9 @@ No payment, recruitment, email, mapping or messaging APIs are called by the appl
 
 | Service/provider | Purpose | Plan/region and actual status |
 | --- | --- | --- |
-| Replit development workspace and managed PostgreSQL | Earlier source import, HTTPS standalone preview, database persistence check. | Commit `b9e1365`: 257 tests/build/smoke passed; later UI changes await upload. Existing Core/US$20 credit confirmed; auto-reload off. Unpublished Autoscale configuration: 1 CPU, 1 GiB, max 1 instance, Asia, fresh production database. |
+| Replit development workspace and managed PostgreSQL | Earlier source import, HTTPS standalone preview, database persistence check. | Commit `423bf15`: 257 tests/build/smoke passed; `71489cc` Autoscale target applied. Publication awaits dependency-security remediation. Existing Core/US$20 credit confirmed; auto-reload off. Unpublished Autoscale configuration: 1 CPU, 1 GiB, max 1 instance, Asia, fresh production database. |
 | RunPod | Bounded GPU relevance service. | Endpoint `0qcgjcclf6fln9`, container built from private source; first real passage and six synthetic jobs completed. One 16 GB GPU family; quoted runtime US$0.58/hour; max 1/active 0 workers; idle 5s; execution 120s. Region and actual completed-job usage remain to be recorded. |
-| GitHub | Private GPU build input; full app source delivery still pending. | Private `Epsilon3096/shiftbridge-inference`, commit `5ddfef5b7f553d6e1d1b9618fcaf9f6e4f007598`, connected with repository-only permission. This is not the full app judge-access source link. |
+| GitHub | Public application source and CI; separate private GPU build input. | Public [Epsilon3096/SDC_Hackathon](https://github.com/Epsilon3096/SDC_Hackathon), anonymous access verified with eight commits through `71489cc`. All six [CI jobs](https://github.com/Epsilon3096/SDC_Hackathon/actions/runs/39939758010) passed. Private `Epsilon3096/shiftbridge-inference` remains repository-only build input. |
 | Local Windows + PGlite | Current development, tests and persisted demo. | Local execution; not cloud hosting. |
 
 ## 4. AI tools, models and datasets
@@ -65,7 +65,7 @@ No payment, recruitment, email, mapping or messaging APIs are called by the appl
 | --- | --- | --- | --- |
 | `BAAI/bge-large-en-v1.5` — build revision `d4aa6901d3a41ba39fb536a557fa166f842b0e09` | BAAI, configured for RunPod | Pretrained embedding relevance triage only; one live passage plus six synthetic cases completed; app accepted the real-passage result. No training/fine-tuning. | **Executed revision pinned; genuine job provenance recorded in `../RUNPOD_VERIFICATION.md`.** Final model-card/licence review remains required; these cases do not establish accuracy. |
 
-The model row records initial executed use. Retain genuine job evidence and complete the final licence review; no threshold calibration or general model accuracy is established. The Python worker uses PyTorch, Transformers, huggingface-hub, safetensors and the RunPod SDK; pinned direct versions are in `runpod/requirements.txt` and `runpod/Dockerfile`. These worker dependencies are separate from the npm inventory; transitive Python hashes are not yet frozen.
+The model row records initial executed use under preprocessing contract v2. Replit flagged Transformers 4.57.6 and certifi dependency findings; remediation, a revised worker contract, container rebuild and renewed live verification are in progress. The original seven jobs do not verify the new dependency/contract revision. Retain genuine job evidence and complete the final licence review; no threshold calibration or general model accuracy is established. The Python worker uses PyTorch, Transformers, huggingface-hub, safetensors and the RunPod SDK; pinned direct versions are in `runpod/requirements.txt` and `runpod/Dockerfile`. These worker dependencies are separate from the npm inventory; transitive Python hashes are not yet frozen.
 
 ### 4.2 Datasets
 
@@ -142,7 +142,7 @@ Seven initial GPU jobs completed, but model accuracy and threshold calibration r
 | No credentials exposed | No credentials are included in these drafts. Final source/repository/recording needs a secret scan and visual check. |
 | AI development use disclosed and reviewed by team | Major use disclosed; human review/ownership confirmation pending. |
 | Sponsor use declared | Earlier platform use described; credit provenance/mentoring confirmation and completed platform proof pending. |
-| Prototype accessible through provided links | **Not complete.** Stable current deployment and repository access not verified. |
+| Prototype accessible through provided links | **Not complete.** Public source access is verified. Production deployment remains blocked by dependency-security remediation. |
 | All fields complete within limits | Limited responses fit; required participant/external inputs and signatures remain. |
 
 ## 8. Declaration
