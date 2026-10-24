@@ -1,3 +1,5 @@
+> **Historical drafting pack - superseded for submission.** The participant subsequently confirmed personal declarations and authorised the signed official forms. Use the [final submission files](../../submission/) and [main README](../../README.md) for the published 6:41 YouTube video, slides, signed PDFs and platform proof. Unresolved items below describe the earlier draft checkpoint, not the final submission package. Independent worker impact evaluation remains future work.
+
 # ShiftBridge submission draft pack — Console
 
 Draft text updated 23 October 2026 for Domain 1 AIVERSECITY. PDF/deck artifacts are prepared separately as unsigned review drafts and require final participant approval. Participant: **Tan King Yang**, **UTAR**, **solo team Console**. Email and phone are intentionally absent from these repository documents; they belong only in the private official PDFs where required.

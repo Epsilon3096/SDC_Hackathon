@@ -1,0 +1,22 @@
+{
+  "SDC2026_Console_Preliminary.pdf": {
+    "bytes": 2320526,
+    "sha256": "031951e1f5c0099d09a7c8a5f01ccf2da0a2b2539c5404163e599864908b9504"
+  },
+  "SDC2026_Console_Replit_POU.pdf": {
+    "bytes": 725178,
+    "sha256": "9b424bf7b12850a1f004a4785f3f2ab21947757ab697b469191a02815c61a13c"
+  },
+  "SDC2026_Console_Runpod_POU.pdf": {
+    "bytes": 314019,
+    "sha256": "a96fdfa4df779ed28b2863cfa99e8232be1171244c90b76f9167d4780c656f30"
+  },
+  "SDC2026_Console_TechDeclaration.pdf": {
+    "bytes": 2705938,
+    "sha256": "ca495ba49857516eece13ce6a9320cd94033a6f3336d1b496c4ac50b717af5a3"
+  },
+  "ShiftBridge_Console_Pitch.pptx": {
+    "bytes": 237449,
+    "sha256": "f54c518229d8ade2dcda789d7060dda0cc114b9567e9218f3164897b1d93a339"
+  }
+}
